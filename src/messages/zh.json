@@ -1,0 +1,278 @@
+{
+  "common": {
+    "home": "首页",
+    "about": "关于我们",
+    "products": "产品中心",
+    "sustainability": "可持续发展",
+    "qualityProcess": "质量流程",
+    "rfq": "询价单",
+    "contact": "联系我们",
+    "login": "登录",
+    "logout": "退出",
+    "dashboard": "仪表盘",
+    "workers": "员工管理",
+    "attendance": "考勤管理",
+    "payroll": "薪资管理",
+    "production": "生产管理",
+    "inquiries": "询价管理",
+    "reports": "报表中心",
+    "settings": "系统设置",
+    "search": "搜索",
+    "filter": "筛选",
+    "export": "导出",
+    "add": "新增",
+    "edit": "编辑",
+    "delete": "删除",
+    "save": "保存",
+    "cancel": "取消",
+    "confirm": "确认",
+    "back": "返回",
+    "next": "下一步",
+    "previous": "上一步",
+    "loading": "加载中...",
+    "noData": "暂无数据",
+    "error": "错误",
+    "success": "成功",
+    "warning": "警告",
+    "info": "信息",
+    "yes": "是",
+    "no": "否",
+    "active": "在职",
+    "inactive": "离职",
+    "pending": "待处理",
+    "approved": "已批准",
+    "rejected": "已拒绝",
+    "completed": "已完成",
+    "total": "总计",
+    "present": "出勤",
+    "absent": "缺勤",
+    "late": "迟到",
+    "leave": "请假",
+    "overtime": "加班",
+    "salary": "薪资",
+    "department": "部门",
+    "designation": "职位",
+    "shift": "班次",
+    "date": "日期",
+    "name": "姓名",
+    "email": "邮箱",
+    "phone": "电话",
+    "address": "地址",
+    "action": "操作",
+    "status": "状态",
+    "createdAt": "创建时间",
+    "updatedAt": "更新时间"
+  },
+  "homepage": {
+    "hero": {
+      "title": "顺意服装",
+      "subtitle": "卓越的服装制造商",
+      "description": "拥有国际合规标准、可持续实践和世界级生产能力的领先服装制造商。",
+      "cta": "获取报价",
+      "watchVideo": "观看工厂参观"
+    },
+    "stats": {
+      "workers": "熟练工人",
+      "capacity": "月产能",
+      "countries": "出口国家",
+      "certifications": "认证证书"
+    },
+    "about": {
+      "title": "关于顺意服装",
+      "description": "顺意服装成立之初即致力于为全球市场提供优质服装，现已发展成为国际品牌值得信赖的制造合作伙伴。"
+    },
+    "capabilities": {
+      "title": "制造能力",
+      "knitwear": "针织服装",
+      "woven": "梭织服装",
+      "denim": "牛仔服装",
+      "outerwear": "外套类"
+    },
+    "clients": {
+      "title": "合作客户"
+    },
+    "certifications": {
+      "title": "合规认证"
+    },
+    "sustainability": {
+      "title": "可持续发展承诺",
+      "description": "我们致力于可持续制造实践，保护环境并支持社区。"
+    },
+    "cta": {
+      "title": "准备开始您的项目？",
+      "description": "联系我们的团队进行询价、报价或工厂参观。",
+      "button": "提交询价"
+    }
+  },
+  "products": {
+    "title": "产品中心",
+    "categories": "分类",
+    "all": "全部产品",
+    "knitwear": "针织服装",
+    "woven": "梭织服装",
+    "denim": "牛仔服装",
+    "outerwear": "外套类",
+    "filters": {
+      "season": "季节",
+      "category": "类别",
+      "color": "颜色",
+      "size": "尺码"
+    },
+    "details": {
+      "specifications": "规格参数",
+      "fabric": "面料成分",
+      "gsm": "克重",
+      "colors": "可选颜色",
+      "sizes": "可选尺码",
+      "downloadSpecs": "下载规格书"
+    }
+  },
+  "rfq": {
+    "title": "询价单 (RFQ)",
+    "subtitle": "提交您的询价需求，我们将在24小时内回复详细报价",
+    "form": {
+      "buyerName": "买家姓名",
+      "companyName": "公司名称",
+      "email": "电子邮箱",
+      "phone": "联系电话",
+      "country": "国家/地区",
+      "product": "感兴趣产品",
+      "quantity": "预估订单数量",
+      "targetPrice": "目标价格 (FOB)",
+      "specifications": "产品规格要求",
+      "techPack": "工艺单/参考文件",
+      "additionalInfo": "其他要求",
+      "submit": "提交询价",
+      "submitting": "提交中...",
+      "success": "询价提交成功！我们的团队将在24小时内与您联系。",
+      "error": "提交失败，请重试。"
+    }
+  },
+  "contact": {
+    "title": "联系我们",
+    "corporateOffice": "总部办公室",
+    "factoryAddress": "工厂地址",
+    "email": "邮箱",
+    "phone": "电话",
+    "whatsapp": "WhatsApp",
+    "wechat": "微信",
+    "form": {
+      "name": "您的姓名",
+      "email": "电子邮箱",
+      "subject": "主题",
+      "message": "留言内容",
+      "submit": "发送留言"
+    }
+  },
+  "admin": {
+    "login": {
+      "title": "管理员登录",
+      "subtitle": "顺意服装管理系统",
+      "email": "邮箱地址",
+      "password": "密码",
+      "rememberMe": "记住我",
+      "forgotPassword": "忘记密码？",
+      "login": "登录",
+      "loggingIn": "登录中...",
+      "error": "凭证无效，请重试。"
+    },
+    "dashboard": {
+      "title": "仪表盘",
+      "overview": "概览",
+      "totalWorkers": "员工总数",
+      "presentToday": "今日出勤",
+      "absentToday": "今日缺勤",
+      "onLeave": "请假中",
+      "monthlyProduction": "月产量",
+      "overtimeExpenses": "加班费用",
+      "recentInquiries": "最新询价",
+      "attendanceChart": "考勤概览",
+      "productionChart": "产量概览"
+    },
+    "workers": {
+      "title": "员工管理",
+      "addWorker": "新增员工",
+      "workerId": "工号",
+      "fullName": "姓名",
+      "photo": "照片",
+      "gender": "性别",
+      "dateOfBirth": "出生日期",
+      "phone": "电话",
+      "emergencyContact": "紧急联系人",
+      "bloodGroup": "血型",
+      "nationalId": "身份证号",
+      "address": "住址",
+      "department": "部门",
+      "designation": "职位",
+      "shift": "班次",
+      "joiningDate": "入职日期",
+      "basicSalary": "基本工资",
+      "bankAccount": "银行账户",
+      "employmentStatus": "在职状态",
+      "documents": "附件文档",
+      "searchPlaceholder": "搜索员工...",
+      "filterDepartment": "按部门筛选",
+      "filterStatus": "按状态筛选"
+    },
+    "attendance": {
+      "title": "考勤管理",
+      "dailyAttendance": "日常考勤",
+      "markAttendance": "录入考勤",
+      "bulkUpload": "批量导入",
+      "reports": "考勤报表",
+      "date": "日期",
+      "worker": "员工",
+      "status": "状态",
+      "checkIn": "签到",
+      "checkOut": "签退",
+      "hoursWorked": "工时",
+      "overtimeHours": "加班时长"
+    },
+    "payroll": {
+      "title": "薪资管理",
+      "processPayroll": "发放薪资",
+      "payrollPeriod": "薪资周期",
+      "basicSalary": "基本工资",
+      "overtimePay": "加班工资",
+      "attendanceBonus": "全勤奖",
+      "festivalBonus": "节日奖金",
+      "allowances": "津贴",
+      "deductions": "扣款",
+      "netPayable": "实发工资",
+      "paymentStatus": "发放状态",
+      "generatePayslips": "生成工资条",
+      "exportExcel": "导出Excel"
+    },
+    "production": {
+      "title": "生产管理",
+      "lines": "生产线",
+      "addLine": "新增生产线",
+      "lineName": "生产线名称",
+      "target": "日目标",
+      "actual": "实际产量",
+      "efficiency": "达成率",
+      "workersAssigned": "分配员工",
+      "dailyRecord": "日产量记录",
+      "monthlyReport": "月度报表"
+    },
+    "inquiries": {
+      "title": "买家询价",
+      "new": "新建",
+      "contacted": "已联系",
+      "quoted": "已报价",
+      "closed": "已关闭",
+      "assignTo": "分配给",
+      "viewTechPack": "查看工艺单",
+      "addNote": "添加备注"
+    }
+  },
+  "validation": {
+    "required": "此字段为必填项",
+    "email": "邮箱格式不正确",
+    "phone": "电话格式不正确",
+    "minLength": "最少{{min}}个字符",
+    "maxLength": "最多{{max}}个字符",
+    "numeric": "必须为数字",
+    "positive": "必须为正数"
+  }
+}
