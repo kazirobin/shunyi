@@ -4,8 +4,8 @@ import { ThemeProvider } from "next-themes";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
-export const locales = ["en", "zh"] as const;
-export type Locale = (typeof locales)[number];
+const locales = ["en", "zh"] as const;
+type Locale = (typeof locales)[number];
 
 interface LocaleLayoutProps {
   children: React.ReactNode;

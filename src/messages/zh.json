@@ -187,7 +187,21 @@
       "overtimeExpenses": "加班费用",
       "recentInquiries": "最新询价",
       "attendanceChart": "考勤概览",
-      "productionChart": "产量概览"
+      "productionChart": "产量概览",
+      "target": "目标",
+      "actual": "实际",
+      "present": "出勤",
+      "absent": "缺勤",
+      "exportReport": "导出报表",
+      "viewAll": "查看全部",
+      "inquiryId": "询价单号",
+      "buyer": "买家",
+      "company": "公司",
+      "product": "产品",
+      "status": "状态",
+      "date": "日期",
+      "failedToLoad": "无法加载仪表盘数据",
+      "noInquiries": "暂无最新询价"
     },
     "workers": {
       "title": "员工管理",

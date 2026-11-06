@@ -187,7 +187,21 @@
       "overtimeExpenses": "Overtime Expenses",
       "recentInquiries": "Recent Inquiries",
       "attendanceChart": "Attendance Overview",
-      "productionChart": "Production Overview"
+      "productionChart": "Production Overview",
+      "target": "Target",
+      "actual": "Actual",
+      "present": "Present",
+      "absent": "Absent",
+      "exportReport": "Export Report",
+      "viewAll": "View All",
+      "inquiryId": "Inquiry ID",
+      "buyer": "Buyer",
+      "company": "Company",
+      "product": "Product",
+      "status": "Status",
+      "date": "Date",
+      "failedToLoad": "Failed to load dashboard data",
+      "noInquiries": "No recent inquiries"
     },
     "workers": {
       "title": "Worker Management",

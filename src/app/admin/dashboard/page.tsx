@@ -1,5 +1,8 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { motion } from "framer-motion";
 import {
@@ -14,71 +17,36 @@ import {
   ArrowUpRight,
   ArrowDownRight,
 } from "lucide-react";
+import { formatNumber } from "@/lib/utils";
 
-const statCards = [
-  {
-    title: "Total Workers",
-    value: "2,547",
-    change: "+2.3%",
-    changeType: "positive",
-    icon: Users,
-    color: "text-primary",
-    bgColor: "bg-primary/10",
-  },
-  {
-    title: "Present Today",
-    value: "2,341",
-    change: "91.9%",
-    changeType: "positive",
-    icon: CheckCircle,
-    color: "text-green-600",
-    bgColor: "bg-green-100",
-  },
-  {
-    title: "Absent Today",
-    value: "156",
-    change: "-1.2%",
-    changeType: "negative",
-    icon: XCircle,
-    color: "text-red-600",
-    bgColor: "bg-red-100",
-  },
-  {
-    title: "On Leave",
-    value: "50",
-    change: "+5",
-    changeType: "neutral",
-    icon: Clock,
-    color: "text-yellow-600",
-    bgColor: "bg-yellow-100",
-  },
-  {
-    title: "Monthly Production",
-    value: "4.2M pcs",
-    change: "+8.5%",
-    changeType: "positive",
-    icon: Package,
-    color: "text-blue-600",
-    bgColor: "bg-blue-100",
-  },
-  {
-    title: "Overtime Expenses",
-    value: "$45,230",
-    change: "-3.2%",
-    changeType: "negative",
-    icon: DollarSign,
-    color: "text-purple-600",
-    bgColor: "bg-purple-100",
-  },
-];
-
-const recentInquiries = [
-  { id: "RFQ-2024-001", buyer: "H&M", company: "Hennes & Mauritz", product: "Knitwear", status: "NEW", date: "2024-01-15" },
-  { id: "RFQ-2024-002", buyer: "Zara", company: "Inditex Group", product: "Denim", status: "QUOTED", date: "2024-01-14" },
-  { id: "RFQ-2024-003", buyer: "Uniqlo", company: "Fast Retailing", product: "Woven", status: "CONTACTED", date: "2024-01-13" },
-  { id: "RFQ-2024-004", buyer: "Gap", company: "Gap Inc.", product: "Outerwear", status: "NEW", date: "2024-01-12" },
-  { id: "RFQ-2024-005", buyer: "C&A", company: "C&A Europe", product: "Knitwear", status: "CLOSED", date: "2024-01-11" },
-];
+interface DashboardData {
+  stats: {
+    totalWorkers: number;
+    presentToday: number;
+    absentToday: number;
+    onLeaveToday: number;
+    monthlyProduction: number;
+    overtimeExpenses: number;
+  };
+  recentInquiries: Array<{
+    id: string;
+    buyer: string;
+    company: string;
+    product: string;
+    status: string;
+    date: string;
+  }>;
+  attendanceChart: Array<{
+    day: string;
+    present: number;
+    absent: number;
+  }>;
+  productionChart: Array<{
+    week: string;
+    target: number;
+    actual: number;
+  }>;
+}
 
 const statusStyles: Record<string, string> = {
   NEW: "bg-blue-100 text-blue-800",
@@ -90,8 +58,134 @@ const statusStyles: Record<string, string> = {
   LOST: "bg-red-100 text-red-800",
 };
 
+const statCardConfig = [
+  { key: "totalWorkers", icon: Users, color: "text-primary", bgColor: "bg-primary/10", label: "totalWorkers" },
+  { key: "presentToday", icon: CheckCircle, color: "text-green-600", bgColor: "bg-green-100", label: "presentToday" },
+  { key: "absentToday", icon: XCircle, color: "text-red-600", bgColor: "bg-red-100", label: "absentToday" },
+  { key: "onLeaveToday", icon: Clock, color: "text-yellow-600", bgColor: "bg-yellow-100", label: "onLeave" },
+  { key: "monthlyProduction", icon: Package, color: "text-blue-600", bgColor: "bg-blue-100", label: "monthlyProduction" },
+  { key: "overtimeExpenses", icon: DollarSign, color: "text-purple-600", bgColor: "bg-purple-100", label: "overtimeExpenses" },
+];
+
 export default function DashboardPage() {
   const t = useTranslations("admin.dashboard");
+  const [data, setData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/admin/dashboard")
+      .then((res) => res.json())
+      .then((json) => {
+        if (json.stats) setData(json);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground">{t("title")}</h1>
+            <p className="text-muted-foreground mt-1">{t("overview")}</p>
+          </div>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {statCardConfig.map((_, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 + index * 0.05 }}
+              className="card animate-pulse"
+            >
+              <div className="card-content pt-4">
+                <div className="h-12 w-12 rounded-lg bg-muted" />
+                <div className="mt-4 h-8 w-3/4 bg-muted rounded" />
+                <div className="mt-2 h-4 w-1/2 bg-muted rounded" />
+              </div>
+            </motion.div>
+          ))}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <motion.div className="card animate-pulse" style={{ height: "400px" }} />
+          <motion.div className="card animate-pulse" style={{ height: "400px" }} />
+        </div>
+        <motion.div className="card animate-pulse" style={{ height: "300px" }} />
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-muted-foreground">{t("failedToLoad")}</p>
+      </div>
+    );
+  }
+
+  const stats = data.stats;
+  const attendanceRate = stats.totalWorkers > 0
+    ? ((stats.presentToday / stats.totalWorkers) * 100).toFixed(1)
+    : "0";
+
+  const statCards = [
+    {
+      title: t("totalWorkers"),
+      value: formatNumber(stats.totalWorkers),
+      change: `+${attendanceRate}%`,
+      changeType: "positive" as const,
+      icon: Users,
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+    },
+    {
+      title: t("presentToday"),
+      value: formatNumber(stats.presentToday),
+      change: `${attendanceRate}%`,
+      changeType: "positive" as const,
+      icon: CheckCircle,
+      color: "text-green-600",
+      bgColor: "bg-green-100",
+    },
+    {
+      title: t("absentToday"),
+      value: formatNumber(stats.absentToday),
+      change: stats.absentToday > 0 ? "+0%" : "0%",
+      changeType: "negative" as const,
+      icon: XCircle,
+      color: "text-red-600",
+      bgColor: "bg-red-100",
+    },
+    {
+      title: t("onLeave"),
+      value: formatNumber(stats.onLeaveToday),
+      change: "+0",
+      changeType: "neutral" as const,
+      icon: Clock,
+      color: "text-yellow-600",
+      bgColor: "bg-yellow-100",
+    },
+    {
+      title: t("monthlyProduction"),
+      value: formatNumber(stats.monthlyProduction) + " pcs",
+      change: "+0%",
+      changeType: "positive" as const,
+      icon: Package,
+      color: "text-blue-600",
+      bgColor: "bg-blue-100",
+    },
+    {
+      title: t("overtimeExpenses"),
+      value: `$${formatNumber(stats.overtimeExpenses)}`,
+      change: "-0%",
+      changeType: "negative" as const,
+      icon: DollarSign,
+      color: "text-purple-600",
+      bgColor: "bg-purple-100",
+    },
+  ];
 
   return (
     <div className="space-y-6">
@@ -107,7 +201,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2">
           <button className="btn btn-outline btn-sm">
             <FileText className="h-4 w-4 mr-2" />
-            Export Report
+            {t("exportReport")}
           </button>
         </div>
       </motion.div>
@@ -166,38 +260,30 @@ export default function DashboardPage() {
           </div>
           <div className="card-content">
             <div className="h-64 flex items-end justify-around gap-2 px-2">
-              {[
-                { day: "Mon", present: 85, absent: 15 },
-                { day: "Tue", present: 92, absent: 8 },
-                { day: "Wed", present: 88, absent: 12 },
-                { day: "Thu", present: 90, absent: 10 },
-                { day: "Fri", present: 87, absent: 13 },
-                { day: "Sat", present: 75, absent: 25 },
-                { day: "Sun", present: 10, absent: 90 },
-              ].map((data, index) => (
-                <div key={data.day} className="flex-1 flex flex-col items-center justify-end gap-1">
+              {data.attendanceChart.map((item, index) => (
+                <div key={item.day} className="flex-1 flex flex-col items-center justify-end gap-1">
                   <div className="w-full flex justify-center gap-1">
                     <div
                       className="w-full max-h-48 bg-green-500 rounded-t transition-all hover:bg-green-600"
-                      style={{ height: `${data.present}%` }}
+                      style={{ height: `${item.present}%` }}
                     />
                     <div
                       className="w-full max-h-48 bg-red-500 rounded-t transition-all hover:bg-red-600"
-                      style={{ height: `${data.absent}%` }}
+                      style={{ height: `${item.absent}%` }}
                     />
                   </div>
-                  <span className="text-xs text-muted-foreground">{data.day}</span>
+                  <span className="text-xs text-muted-foreground">{item.day}</span>
                 </div>
               ))}
             </div>
             <div className="mt-4 flex items-center justify-center gap-4 text-sm">
               <div className="flex items-center gap-1">
                 <span className="w-3 h-3 rounded bg-green-500" />
-                <span className="text-muted-foreground">Present</span>
+                <span className="text-muted-foreground">{t("present")}</span>
               </div>
               <div className="flex items-center gap-1">
                 <span className="w-3 h-3 rounded bg-red-500" />
-                <span className="text-muted-foreground">Absent</span>
+                <span className="text-muted-foreground">{t("absent")}</span>
               </div>
             </div>
           </div>
@@ -219,35 +305,30 @@ export default function DashboardPage() {
           </div>
           <div className="card-content">
             <div className="h-64 flex items-end justify-around gap-2 px-2">
-              {[
-                { week: "W1", target: 100, actual: 92 },
-                { week: "W2", target: 100, actual: 95 },
-                { week: "W3", target: 100, actual: 88 },
-                { week: "W4", target: 100, actual: 102 },
-              ].map((data, index) => (
-                <div key={data.week} className="flex-1 flex flex-col items-center justify-end gap-1">
+              {data.productionChart.map((item, index) => (
+                <div key={item.week} className="flex-1 flex flex-col items-center justify-end gap-1">
                   <div className="w-full flex justify-center gap-1">
                     <div
                       className="w-full max-h-48 bg-primary/30 rounded-t transition-all"
-                      style={{ height: `${data.target}%` }}
+                      style={{ height: `${Math.min(100, (item.target / Math.max(...data.productionChart.map(d => d.target))) * 100)}%` }}
                     />
                     <div
                       className="w-full max-h-48 bg-primary rounded-t transition-all hover:bg-primary/80"
-                      style={{ height: `${data.actual}%` }}
+                      style={{ height: `${Math.min(100, (item.actual / Math.max(...data.productionChart.map(d => d.target))) * 100)}%` }}
                     />
                   </div>
-                  <span className="text-xs text-muted-foreground">{data.week}</span>
+                  <span className="text-xs text-muted-foreground">{item.week}</span>
                 </div>
               ))}
             </div>
             <div className="mt-4 flex items-center justify-center gap-4 text-sm">
               <div className="flex items-center gap-1">
                 <span className="w-3 h-3 rounded bg-primary/30" />
-                <span className="text-muted-foreground">Target</span>
+                <span className="text-muted-foreground">{t("target")}</span>
               </div>
               <div className="flex items-center gap-1">
                 <span className="w-3 h-3 rounded bg-primary" />
-                <span className="text-muted-foreground">Actual</span>
+                <span className="text-muted-foreground">{t("actual")}</span>
               </div>
             </div>
           </div>
@@ -267,7 +348,7 @@ export default function DashboardPage() {
               <span className="ml-2">{t("recentInquiries")}</span>
             </div>
             <a href="/admin/inquiries" className="btn btn-outline btn-sm">
-              View All
+              {t("viewAll")}
             </a>
           </div>
         </div>
@@ -276,29 +357,37 @@ export default function DashboardPage() {
             <table className="w-full" role="table">
               <thead>
                 <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Inquiry ID</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Buyer</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Company</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Product</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">Date</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">{t("inquiryId")}</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">{t("buyer")}</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">{t("company")}</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">{t("product")}</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">{t("status")}</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">{t("date")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y">
-                {recentInquiries.map((inquiry) => (
-                  <tr key={inquiry.id} className="hover:bg-muted/50 transition-colors">
-                    <td className="px-4 py-3 text-sm font-medium text-foreground">{inquiry.id}</td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">{inquiry.buyer}</td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">{inquiry.company}</td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">{inquiry.product}</td>
-                    <td className="px-4 py-3">
-                      <span className={`badge badge-outline ${statusStyles[inquiry.status]}`}>
-                        {inquiry.status}
-                      </span>
+                {data.recentInquiries.length > 0 ? (
+                  data.recentInquiries.map((inquiry) => (
+                    <tr key={inquiry.id} className="hover:bg-muted/50 transition-colors">
+                      <td className="px-4 py-3 text-sm font-medium text-foreground">{inquiry.id}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{inquiry.buyer}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{inquiry.company}</td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{inquiry.product}</td>
+                      <td className="px-4 py-3">
+                        <span className={`badge badge-outline ${statusStyles[inquiry.status] || "bg-gray-100 text-gray-800"}`}>
+                          {inquiry.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-muted-foreground">{inquiry.date}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">
+                      {t("noInquiries")}
                     </td>
-                    <td className="px-4 py-3 text-sm text-muted-foreground">{inquiry.date}</td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>

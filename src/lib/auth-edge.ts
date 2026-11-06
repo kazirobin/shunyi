@@ -14,12 +14,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           throw new Error("Email and password are required");
         }
 
-        return {
-          id: "1",
-          email: credentials.email as string,
-          name: "Admin User",
-          role: "SUPER_ADMIN",
-        };
+        if (process.env.NODE_ENV === "development") {
+          return {
+            id: "1",
+            email: credentials.email as string,
+            name: "Admin User",
+            role: "SUPER_ADMIN",
+          };
+        }
+
+        throw new Error("Database authentication not available in edge runtime");
       },
     }),
   ],
@@ -55,47 +59,24 @@ export type UserRole = "SUPER_ADMIN" | "ADMIN" | "HR_MANAGER" | "ACCOUNTS" | "LI
 export const rolePermissions: Record<UserRole, string[]> = {
   SUPER_ADMIN: ["*"],
   ADMIN: [
-    "workers:read",
-    "workers:write",
-    "attendance:read",
-    "attendance:write",
-    "payroll:read",
-    "payroll:write",
-    "production:read",
-    "production:write",
-    "inquiries:read",
-    "inquiries:write",
-    "reports:read",
-    "settings:read",
-    "settings:write",
-    "users:read",
-    "users:write",
+    "workers:read", "workers:write", "attendance:read", "attendance:write",
+    "payroll:read", "payroll:write", "production:read", "production:write",
+    "inquiries:read", "inquiries:write", "reports:read", "settings:read",
+    "settings:write", "users:read", "users:write",
   ],
   HR_MANAGER: [
-    "workers:read",
-    "workers:write",
-    "attendance:read",
-    "attendance:write",
-    "production:read",
-    "reports:read",
+    "workers:read", "workers:write", "attendance:read", "attendance:write",
+    "production:read", "reports:read",
   ],
   ACCOUNTS: [
-    "workers:read",
-    "payroll:read",
-    "payroll:write",
-    "reports:read",
+    "workers:read", "payroll:read", "payroll:write", "reports:read",
   ],
   LINE_SUPERVISOR: [
-    "workers:read",
-    "attendance:read",
-    "attendance:write",
-    "production:read",
-    "production:write",
+    "workers:read", "attendance:read", "attendance:write",
+    "production:read", "production:write",
   ],
   BUYER_MANAGER: [
-    "inquiries:read",
-    "inquiries:write",
-    "products:read",
+    "inquiries:read", "inquiries:write", "products:read",
   ],
 };
 
