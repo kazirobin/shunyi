@@ -12,7 +12,7 @@ async function seed() {
     await mongoose.connect(MONGODB_URI, { dbName: MONGODB_DB_NAME });
     console.log("Connected to MongoDB");
 
-    const db = mongoose.connection.db;
+    const db = mongoose.connection.db!;
     const users = db.collection("users");
 
     const existing = await users.findOne({ email: "admin@shunyigarments.com" });
