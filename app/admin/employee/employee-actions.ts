@@ -1,7 +1,7 @@
 "use server";
 
 import mongoose from "mongoose";
-import { connectDB } from "./db-connect";
+import { connectDB } from "@/lib/db-connect";
 import EmployeeModel from "./employee-model";
 import type { EmployeeInput } from "./employee-types";
 
