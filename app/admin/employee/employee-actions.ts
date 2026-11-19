@@ -14,6 +14,13 @@ function cleanInput(input: EmployeeInput) {
   const number = typeof input.number === "string" ? input.number.trim() : "";
   const notes = typeof input.notes === "string" ? input.notes.trim() : "";
   const photoUrl = typeof input.photoUrl === "string" ? input.photoUrl.trim() : "";
+  const status = input.status ?? "active";
+  const grade = input.grade ?? "a";
+
+  const validStatuses = ["active", "inactive", "pending", "rejected"] as const;
+  const validGrades = ["a", "b", "c", "d", "e"] as const;
+  if (!validStatuses.includes(status as (typeof validStatuses)[number])) throw new Error("Invalid employee status.");
+  if (!validGrades.includes(grade as (typeof validGrades)[number])) throw new Error("Invalid employee grade.");
 
   if (!name || !number) throw new Error("Name and phone number are required.");
   if (name.length > 120 || number.length > 40 || notes.length > 2000) {
@@ -24,7 +31,7 @@ function cleanInput(input: EmployeeInput) {
     try { parsed = new URL(photoUrl); } catch { throw new Error("Please enter a valid photo URL."); }
     if (!["http:", "https:"].includes(parsed.protocol)) throw new Error("Photo URL must start with http:// or https://.");
   }
-  return { name, number, notes, photoUrl };
+  return { name, number, notes, photoUrl, status, grade };
 }
 
 /** Rewrites every serial as a unique, gap-free sequence (1..N). */
@@ -59,6 +66,7 @@ export async function getEmployees() {
       data: rows.map((row) => ({
         _id: row._id.toString(), serial: Number.isInteger(row.serial) ? row.serial : 0,
         name: row.name, number: row.number, notes: row.notes ?? "", photoUrl: row.photoUrl ?? "",
+        status: row.status ?? "active", grade: row.grade ?? "a",
       })),
       message: "Employees loaded successfully.",
     };

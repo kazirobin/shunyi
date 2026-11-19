@@ -5,6 +5,8 @@ export type Employee = {
   number: string;
   notes: string;
   photoUrl: string;
+  status: "active" | "inactive" | "pending" | "rejected";
+  grade: "a" | "b" | "c" | "d" | "e";
 };
 
 export type EmployeeInput = {
@@ -13,6 +15,8 @@ export type EmployeeInput = {
   notes?: string;
   photoUrl?: string;
   serial?: number;
+  status?: "active" | "inactive" | "pending" | "rejected";
+  grade?: "a" | "b" | "c" | "d" | "e";
 };
 
 export type ActionResult = {

@@ -57,6 +57,8 @@ export default function EmployeePage() {
   const [notes, setNotes] = useState("");
   const [serial, setSerial] = useState("1");
   const [photoUrl, setPhotoUrl] = useState("");
+  const [status, setStatus] = useState<Employee["status"]>("active");
+  const [grade, setGrade] = useState<Employee["grade"]>("a");
 
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -143,6 +145,8 @@ export default function EmployeePage() {
     setNotes("");
     setSerial("1");
     setPhotoUrl("");
+    setStatus("active");
+    setGrade("a");
     setEditingId(null);
   }
 
@@ -159,6 +163,8 @@ export default function EmployeePage() {
       notes: notes.trim(),
       photoUrl: photoUrl.trim(),
       serial: Number(serial),
+      status,
+      grade,
     };
 
     try {
@@ -185,6 +191,8 @@ export default function EmployeePage() {
     setNotes(employee.notes);
     setSerial(String(employee.serial));
     setPhotoUrl(employee.photoUrl || "");
+    setStatus(employee.status || "active");
+    setGrade(employee.grade || "a");
     setMessage("");
 
     window.scrollTo({
@@ -293,7 +301,7 @@ export default function EmployeePage() {
   }
 
   const filteredEmployees = employees.filter((employee) =>
-    `${employee.name} ${employee.number} ${employee.serial}`
+    `${employee.name} ${employee.number} ${employee.serial} ${employee.status} ${employee.grade}`
       .toLowerCase()
       .includes(search.toLowerCase())
   );
@@ -428,6 +436,39 @@ export default function EmployeePage() {
                 />
               </div>
             )}
+          </div>
+
+          {/* Status and Grade */}
+          <div className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label htmlFor="employee-status" className="text-sm font-medium">Status</label>
+              <select
+                id="employee-status"
+                value={status}
+                onChange={(e) => setStatus(e.target.value as Employee["status"])}
+                className="h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:border-primary"
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <label htmlFor="employee-grade" className="text-sm font-medium">Grade</label>
+              <select
+                id="employee-grade"
+                value={grade}
+                onChange={(e) => setGrade(e.target.value as Employee["grade"])}
+                className="h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:border-primary"
+              >
+                <option value="a">A</option>
+                <option value="b">B</option>
+                <option value="c">C</option>
+                <option value="d">D</option>
+                <option value="e">E</option>
+              </select>
+            </div>
           </div>
 
           {/* Notes */}
@@ -609,6 +650,20 @@ export default function EmployeePage() {
                   <h3 className="text-base font-semibold leading-snug text-foreground">
                     {employee.name}
                   </h3>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${
+                      employee.status === "active" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" :
+                      employee.status === "inactive" ? "bg-muted text-muted-foreground" :
+                      employee.status === "pending" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" :
+                      "bg-red-500/10 text-red-600 dark:text-red-400"
+                    }`}>
+                      {employee.status}
+                    </span>
+                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase text-primary">
+                      Grade {employee.grade}
+                    </span>
+                  </div>
 
                   {/* 3rd: Click-to-Copy Blue Phone Number + WhatsApp Icon */}
                   <div className="mt-2 flex items-center justify-between gap-2">

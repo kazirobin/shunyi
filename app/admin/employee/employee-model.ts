@@ -6,6 +6,8 @@ export interface IEmployee {
   notes: string;
   photoUrl: string;
   serial: number;
+  status: "active" | "inactive" | "pending" | "rejected";
+  grade: "a" | "b" | "c" | "d" | "e";
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -17,6 +19,8 @@ const EmployeeSchema = new Schema<IEmployee>(
     number: { type: String, required: true, trim: true, maxlength: 40 },
     notes: { type: String, default: "", trim: true, maxlength: 2000 },
     photoUrl: { type: String, default: "", trim: true, maxlength: 2048 },
+    status: { type: String, enum: ["active", "inactive", "pending", "rejected"], default: "active", lowercase: true, index: true },
+    grade: { type: String, enum: ["a", "b", "c", "d", "e"], default: "a", lowercase: true, index: true },
   },
   { timestamps: true }
 );
