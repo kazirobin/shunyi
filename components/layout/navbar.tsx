@@ -33,7 +33,6 @@ type NavLink = {
 
 const publicLinks: NavLink[] = [
   { name: "Home", href: "/" },
-  { name: "About", href: "/about" },
   { name: "Products", href: "/products" },
   { name: "Contact", href: "/contact" },
 ];
