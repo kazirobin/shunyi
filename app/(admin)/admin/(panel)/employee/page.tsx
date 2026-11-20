@@ -20,13 +20,13 @@ import {
 } from "lucide-react";
 
 import {
-  addEmployee,
-  deleteEmployee,
-  getEmployees,
-  updateEmployee,
-  reorderEmployees,
-  repairOldEmployeeSerials,
-} from "./employee-actions";
+  apiGetEmployees as getEmployees,
+  apiAddEmployee as addEmployee,
+  apiUpdateEmployee as updateEmployee,
+  apiDeleteEmployee as deleteEmployee,
+  apiReorderEmployees as reorderEmployees,
+  apiRepairSerials as repairOldEmployeeSerials,
+} from "./employee-api";
 
 import type { Employee } from "./employee-types";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";

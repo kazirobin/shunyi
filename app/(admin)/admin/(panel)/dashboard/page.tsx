@@ -25,7 +25,8 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { getLatestAttendanceSummary } from "../attendance/attendance-actions";
-import { getEmployees } from "../employee/employee-actions";
+import { connectDB } from "@/lib/db-connect";
+import EmployeeModel from "../employee/employee-model";
 import type { Employee } from "../employee/employee-types";
 import { getProducts } from "../layout/actions";
 import type { IProduct } from "../layout/types";
@@ -117,6 +118,29 @@ function EmptyNote({ children, href, cta }: { children: React.ReactNode; href: s
   );
 }
 
+async function loadEmployees(): Promise<{ ok: true; data: Employee[] } | { ok: false }> {
+  try {
+    await connectDB();
+    const rows = await EmployeeModel.find().sort({ serial: 1, createdAt: 1, _id: 1 }).lean();
+    return {
+      ok: true,
+      data: rows.map((r) => ({
+        _id: r._id.toString(),
+        serial: Number.isInteger(r.serial) ? r.serial : 0,
+        name: r.name,
+        number: r.number,
+        notes: r.notes ?? "",
+        photoUrl: r.photoUrl ?? "",
+        status: r.status ?? "active",
+        grade: r.grade ?? "a",
+      })),
+    };
+  } catch (error) {
+    console.error("Dashboard employees error:", error);
+    return { ok: false };
+  }
+}
+
 async function loadProducts(): Promise<{ ok: true; data: IProduct[] } | { ok: false }> {
   try {
     return { ok: true, data: (await getProducts()) as IProduct[] };
@@ -128,10 +152,10 @@ async function loadProducts(): Promise<{ ok: true; data: IProduct[] } | { ok: fa
 
 async function DashboardData() {
   await connection();
-  const [empRes, prodRes, att] = await Promise.all([getEmployees(), loadProducts(), getLatestAttendanceSummary()]);
-  const employees: Employee[] = empRes.success ? empRes.data : [];
+  const [empRes, prodRes, att] = await Promise.all([loadEmployees(), loadProducts(), getLatestAttendanceSummary()]);
+  const employees: Employee[] = empRes.ok ? empRes.data : [];
   const products: IProduct[] = prodRes.ok ? prodRes.data : [];
-  const failed = !empRes.success || !prodRes.ok;
+  const failed = !empRes.ok || !prodRes.ok;
 
   const byStatus = Object.fromEntries(STATUS.map((s) => [s.key, employees.filter((e) => e.status === s.key).length]));
   const byGrade = Object.fromEntries(GRADES.map((g) => [g, employees.filter((e) => e.grade === g).length]));
