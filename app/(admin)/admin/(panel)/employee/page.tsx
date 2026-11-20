@@ -29,6 +29,8 @@ import {
 } from "./employee-actions";
 
 import type { Employee } from "./employee-types";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDownIcon } from "lucide-react";
 
 type PreviewImageState = {
   url: string;
@@ -62,6 +64,8 @@ export default function EmployeePage() {
 
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const showForm = formOpen || editingId !== null;
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<PreviewImageState>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -307,22 +311,36 @@ export default function EmployeePage() {
   );
 
   return (
-    <div className="space-y-8 p-4 sm:p-6 md:p-8">
-      {/* Header */}
+    <div className="mx-auto max-w-7xl space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Employees</h1>
-        <p className="mt-2 text-muted-foreground">
-          Manage employee information.
+        <h1 className="text-2xl font-semibold tracking-tight">Employees</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Add, edit and reorder staff records, contacts, grades and status.
         </p>
       </div>
 
       {/* Add / Edit Form */}
-      <div className="rounded-xl border bg-card p-6">
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-lg font-semibold">
-            {editingId ? <Pencil size={20} /> : <Plus size={20} />}
-            {editingId ? "Edit Employee" : "Add New Employee"}
-          </h2>
+      <Collapsible
+        open={showForm}
+        onOpenChange={(open) => {
+          if (!open && editingId) resetForm();
+          setFormOpen(open);
+        }}
+        className="rounded-2xl border bg-card"
+      >
+        <div className="flex items-center justify-between gap-3 px-6 py-4">
+          <CollapsibleTrigger className="group/form -mx-2 flex flex-1 items-center gap-3 rounded-lg px-2 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <span className={`flex size-9 items-center justify-center rounded-lg ${editingId ? "bg-[var(--signal)]/10 text-[var(--signal)]" : "bg-primary text-primary-foreground"}`}>
+              {editingId ? <Pencil size={16} /> : <Plus size={16} />}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-semibold">{editingId ? `Edit ${name || "employee"}` : "Add new employee"}</span>
+              <span className="block text-xs text-muted-foreground">
+                {editingId ? "Update the record, then save" : "Name, phone, photo, status and grade"}
+              </span>
+            </span>
+            <ChevronDownIcon className="size-4 text-muted-foreground transition-transform duration-200 group-data-[panel-open]/form:rotate-180" />
+          </CollapsibleTrigger>
 
           {editingId && (
             <button
@@ -336,7 +354,8 @@ export default function EmployeePage() {
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <CollapsibleContent className="h-(--collapsible-panel-height) overflow-hidden transition-[height] duration-200 ease-out data-ending-style:h-0 data-starting-style:h-0">
+        <form onSubmit={handleSubmit} className="space-y-5 border-t p-6">
           {/* Serial Number */}
           {editingId && (
             <div className="max-w-xs space-y-2">
@@ -499,16 +518,17 @@ export default function EmployeePage() {
                 : "Add Employee"}
           </button>
         </form>
+        </CollapsibleContent>
 
         {message && (
-          <p role="status" aria-live="polite" className="mt-4 text-sm text-muted-foreground">
+          <p role="status" aria-live="polite" className="border-t px-6 py-3 text-sm text-muted-foreground">
             {message}
           </p>
         )}
-      </div>
+      </Collapsible>
 
       {/* Employee Cards Section */}
-      <div className="rounded-xl border bg-card">
+      <div className="rounded-2xl border bg-card">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b p-6">
           <div>
             <h2 className="text-lg font-semibold">

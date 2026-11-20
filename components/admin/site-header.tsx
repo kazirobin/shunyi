@@ -1,0 +1,55 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ExternalLinkIcon } from "lucide-react";
+
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+
+const PAGES: Record<string, { section: string; title: string }> = {
+  "/admin/dashboard": { section: "Overview", title: "Dashboard" },
+  "/admin/employee": { section: "Operations", title: "Employees" },
+  "/admin/attendance": { section: "Operations", title: "Attendance" },
+  "/admin/layout": { section: "Operations", title: "Production" },
+};
+
+export function SiteHeader() {
+  const pathname = usePathname();
+  const page = PAGES[pathname] ?? { section: "Admin", title: "Admin" };
+
+  return (
+    <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center gap-2 rounded-t-2xl border-b bg-card/85 px-4 backdrop-blur md:px-6">
+      <SidebarTrigger className="-ml-1.5 text-muted-foreground" />
+      <Separator orientation="vertical" className="mr-1.5 data-vertical:h-4 data-vertical:self-auto" />
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem className="hidden sm:block">
+            <BreadcrumbLink render={<Link href="/admin/dashboard" />}>Shunyi</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator className="hidden sm:block" />
+          <BreadcrumbItem className="hidden sm:block">{page.section}</BreadcrumbItem>
+          <BreadcrumbSeparator className="hidden sm:block" />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="font-medium">{page.title}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+      <div className="ml-auto flex items-center gap-2">
+        <Button variant="outline" size="sm" nativeButton={false} render={<a href="/" target="_blank" rel="noopener noreferrer" />}>
+          <ExternalLinkIcon />
+          <span className="hidden sm:inline">View site</span>
+        </Button>
+      </div>
+    </header>
+  );
+}

@@ -1,0 +1,55 @@
+/* Admin theme: shadcn tokens in the Shunyi palette (navy frame, signal accent). */
+html.admin {
+  --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --radius: 0.75rem;
+
+  --background: #f5f7fa;
+  --foreground: #0b1324;
+  --card: #ffffff;
+  --card-foreground: #0b1324;
+  --popover: #ffffff;
+  --popover-foreground: #0b1324;
+  --primary: #0c1a33;
+  --primary-foreground: #ffffff;
+  --secondary: #eef2f6;
+  --secondary-foreground: #0c1a33;
+  --muted: #eef2f6;
+  --muted-foreground: #5d6b80;
+  --accent: #eef2f6;
+  --accent-foreground: #0c1a33;
+  --destructive: #d92d20;
+  --border: #e4e9f0;
+  --input: #d9e1ea;
+  --ring: #ff5a1f;
+
+  --signal: #ff5a1f;
+  --success: #12a150;
+  --warning: #d98a00;
+
+  --chart-1: #ff5a1f;
+  --chart-2: #1d355c;
+  --chart-3: #6d93c4;
+  --chart-4: #b7c7da;
+  --chart-5: #ffb48f;
+
+  --sidebar: #0c1a33;
+  --sidebar-foreground: #c3cede;
+  --sidebar-primary: #ff5a1f;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #17294a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1d355c;
+  --sidebar-ring: #ff5a1f;
+
+  background: var(--sidebar);
+  color-scheme: light;
+}
+
+html.admin body {
+  background: var(--sidebar);
+  font-feature-settings: "cv11", "ss01";
+}
+
+html.admin .tnum {
+  font-variant-numeric: tabular-nums;
+}
