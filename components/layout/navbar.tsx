@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/sheet";
 
 import { logoutAction } from "@/app/admin/login/actions";
+import PublicNav from "@/components/public/nav";
 
 type NavLink = {
   name: string;
@@ -46,6 +47,9 @@ const adminLinks: NavLink[] = [
 export default function Navbar({ loggedIn }: { loggedIn: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
+
+  // Visitors get the public site header; admins keep the management nav.
+  if (!loggedIn) return <PublicNav />;
 
   const links = loggedIn ? adminLinks : publicLinks;
 

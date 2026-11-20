@@ -1,7 +1,22 @@
 
 import "./globals.css";
+import "@/components/public/shunyi.css";
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import { IBM_Plex_Mono, Inter_Tight } from "next/font/google";
+
+const interTight = Inter_Tight({
+  subsets: ["latin"],
+  variable: "--font-inter-tight",
+  display: "swap",
+});
+
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-plex-mono",
+  display: "swap",
+});
 
 import { isLoggedIn } from "@/lib/auth";
 import Navbar from "@/components/layout/navbar";
@@ -40,9 +55,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${interTight.variable} ${plexMono.variable}`}>
       <body suppressHydrationWarning>
-        <Suspense fallback={<div className="h-16 border-b" />}>
+        <Suspense fallback={<div className="h-18" />}>
           <NavbarWrapper />
         </Suspense>
 
