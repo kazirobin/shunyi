@@ -4,6 +4,7 @@ import { useState, useEffect, useTransition } from "react";
 import {
   createProduct,
   getProducts,
+  updateProduct,
   deleteProduct,
   addInput,
   deleteInput,
@@ -22,6 +23,10 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState("");
   const [, startTransition] = useTransition();
+
+  // Product name edit states
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
 
   // INPUT states
   const [inDate, setInDate] = useState("");
@@ -69,7 +74,33 @@ export default function ProductsPage() {
     });
   };
 
+  const handleStartEditProduct = (p: IProduct) => {
+    setEditingProductId(p._id!);
+    setEditingName(p.name);
+  };
+
+  const handleCancelEditProduct = () => {
+    setEditingProductId(null);
+    setEditingName("");
+  };
+
+  const handleSaveProductName = () => {
+    if (!editingProductId || !editingName.trim()) return;
+    const name = editingName.trim();
+    startTransition(async () => {
+      await updateProduct(editingProductId, name);
+      setProducts((prev) =>
+        prev.map((p) => (p._id === editingProductId ? { ...p, name } : p))
+      );
+      if (selected?._id === editingProductId) {
+        setSelected({ ...selected, name });
+      }
+      handleCancelEditProduct();
+    });
+  };
+
   const handleDeleteProduct = (id: string) => {
+    if (!confirm("Delete this product?")) return;
     startTransition(async () => {
       await deleteProduct(id);
       setProducts((prev) => prev.filter((p) => p._id !== id));
@@ -199,6 +230,7 @@ export default function ProductsPage() {
               <input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleCreate()}
                 placeholder="New product"
                 className="border rounded px-2 py-1 flex-1 text-sm"
               />
@@ -211,23 +243,69 @@ export default function ProductsPage() {
             </div>
             <ul className="space-y-1">
               {products.map((p) => (
-                <li key={p._id} className="flex items-center justify-between group">
-                  <button
-                    onClick={() => setSelected(p)}
-                    className={`text-left flex-1 px-2 py-1 rounded ${
-                      selected?._id === p._id ? "bg-blue-100 font-medium" : "hover:bg-gray-100"
-                    }`}
-                  >
-                    {p.name}
-                  </button>
-                  <button
-                    onClick={() => handleDeleteProduct(p._id!)}
-                    className="text-red-500 opacity-0 group-hover:opacity-100 text-xs px-1"
-                  >
-                    ✕
-                  </button>
+                <li key={p._id} className="flex items-center justify-between group gap-1">
+                  {editingProductId === p._id ? (
+                    <>
+                      <input
+                        autoFocus
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSaveProductName();
+                          if (e.key === "Escape") handleCancelEditProduct();
+                        }}
+                        className="border rounded px-2 py-1 text-sm flex-1"
+                      />
+                      <button
+                        onClick={handleSaveProductName}
+                        className="text-green-600 text-xs px-1"
+                        title="Save"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        onClick={handleCancelEditProduct}
+                        className="text-gray-500 text-xs px-1"
+                        title="Cancel"
+                      >
+                        ✕
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => setSelected(p)}
+                        className={`text-left flex-1 px-2 py-1 rounded truncate ${
+                          selected?._id === p._id
+                            ? "bg-blue-100 font-medium"
+                            : "hover:bg-gray-100"
+                        }`}
+                      >
+                        {p.name}
+                      </button>
+                      <button
+                        onClick={() => handleStartEditProduct(p)}
+                        className="text-blue-600 opacity-0 group-hover:opacity-100 text-xs px-1"
+                        title="Edit name"
+                      >
+                        ✎
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(p._id!)}
+                        className="text-red-500 opacity-0 group-hover:opacity-100 text-xs px-1"
+                        title="Delete"
+                      >
+                        ✕
+                      </button>
+                    </>
+                  )}
                 </li>
               ))}
+              {products.length === 0 && (
+                <li className="text-xs text-gray-400 text-center py-3">
+                  No product yet
+                </li>
+              )}
             </ul>
           </aside>
 
@@ -239,7 +317,51 @@ export default function ProductsPage() {
               </div>
             ) : (
               <>
-                <h2 className="text-2xl font-bold">{selected.name}</h2>
+                {/* ---------- Product header with Edit/Delete ---------- */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  {editingProductId === selected._id ? (
+                    <>
+                      <input
+                        autoFocus
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleSaveProductName();
+                          if (e.key === "Escape") handleCancelEditProduct();
+                        }}
+                        className="text-2xl font-bold border-b-2 border-blue-500 outline-none px-1"
+                      />
+                      <button
+                        onClick={handleSaveProductName}
+                        className="text-green-600 text-sm font-medium"
+                      >
+                        ✓ Save
+                      </button>
+                      <button
+                        onClick={handleCancelEditProduct}
+                        className="text-gray-500 text-sm"
+                      >
+                        ✕ Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <h2 className="text-2xl font-bold">{selected.name}</h2>
+                      <button
+                        onClick={() => handleStartEditProduct(selected)}
+                        className="text-blue-600 text-sm px-2 py-0.5 border border-blue-200 rounded hover:bg-blue-50"
+                      >
+                        ✎ Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteProduct(selected._id!)}
+                        className="text-red-600 text-sm px-2 py-0.5 border border-red-200 rounded hover:bg-red-50"
+                      >
+                        🗑 Delete
+                      </button>
+                    </>
+                  )}
+                </div>
 
                 {/* ---------- INPUT ---------- */}
                 <section className="bg-white rounded-2xl shadow p-5">
@@ -269,7 +391,9 @@ export default function ProductsPage() {
                             <td className="px-2 py-1">{i.workName}</td>
                             <td className="px-2 py-1">{i.pieces}</td>
                             <td className="px-2 py-1">{i.note}</td>
-                            <td><button onClick={() => handleDeleteInput(i._id!)} className="text-red-500 text-xs">✕</button></td>
+                            <td>
+                              <button onClick={() => handleDeleteInput(i._id!)} className="text-red-500 text-xs">✕</button>
+                            </td>
                           </tr>
                         ))}
                         {selected.inputs.length === 0 && (
@@ -307,7 +431,9 @@ export default function ProductsPage() {
                             <td className="px-2 py-1">{o.date}</td>
                             <td className="px-2 py-1">{o.pieces}</td>
                             <td className="px-2 py-1">{o.note}</td>
-                            <td><button onClick={() => handleDeleteOutput(o._id!)} className="text-red-500 text-xs">✕</button></td>
+                            <td>
+                              <button onClick={() => handleDeleteOutput(o._id!)} className="text-red-500 text-xs">✕</button>
+                            </td>
                           </tr>
                         ))}
                         {selected.outputs.length === 0 && (

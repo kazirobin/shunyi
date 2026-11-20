@@ -1,15 +1,21 @@
-
 "use client";
-import Navbar from "@/components/layout/navbar";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LockKeyhole, Eye, EyeOff, ShieldCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
+import { loginAction } from "./actions";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -19,34 +25,37 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    if (password === "1234") {
-      router.push("/admin/dashboard");
-    } else {
-      setError("Incorrect password. Please try again.");
-    }
+    try {
+      const result = await loginAction(password);
 
-    setLoading(false);
+      if (result.success) {
+        router.push("/admin/dashboard");
+        router.refresh();
+      } else {
+        setError(result.message);
+      }
+    } catch {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <main className="flex min-h-[calc(100vh-64px)] items-center justify-center bg-[#0B1120] px-4 py-12">
       <Card className="w-full max-w-md border-slate-800 bg-[#111827] text-white shadow-2xl">
-
         <CardHeader className="items-center space-y-4 text-center">
           <div className="rounded-2xl bg-blue-500/10 p-4">
             <ShieldCheck size={36} className="text-blue-400" />
           </div>
-  <Navbar variant="public"/>
-          <div>
-            <CardTitle className="text-2xl">
-              Admin Login
-            </CardTitle>
 
+          <div>
+            <CardTitle className="text-2xl">Admin Login</CardTitle>
             <CardDescription className="mt-2 text-slate-400">
               Sign in to access your management dashboard.
             </CardDescription>
@@ -55,7 +64,6 @@ export default function AdminLoginPage() {
 
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-5">
-
             <div className="space-y-2">
               <Label htmlFor="password" className="text-slate-200">
                 Admin Password
@@ -97,7 +105,6 @@ export default function AdminLoginPage() {
               <LockKeyhole className="mr-2" size={17} />
               {loading ? "Signing in..." : "Sign In"}
             </Button>
-
           </form>
 
           <p className="mt-6 text-center text-xs text-slate-500">

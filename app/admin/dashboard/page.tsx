@@ -1,11 +1,10 @@
 
 import Link from "next/link";
-import Navbar from "@/components/layout/navbar";
 
 export default function AdminDashboardPage() {
   return (
     <main className="min-h-screen bg-[#0B1120] text-white">
-      <Navbar variant="admin" />
+   
 
       <div className="mx-auto max-w-7xl space-y-8 p-6 md:p-8">
         {/* Header */}

@@ -1,5 +1,4 @@
 
-import Navbar from "@/components/layout/navbar";
 
 export default function AdminLayout({
   children,
@@ -8,7 +7,6 @@ export default function AdminLayout({
 }>) {
   return (
     <div className="min-h-screen bg-background">
-      <Navbar variant="admin" />
 
       <main className="mx-auto max-w-7xl p-6">
         {children}

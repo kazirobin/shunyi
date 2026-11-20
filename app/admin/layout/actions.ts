@@ -19,6 +19,12 @@ export async function getProducts() {
   return JSON.parse(JSON.stringify(list));
 }
 
+export async function updateProduct(id: string, name: string) {
+  await connectDB();
+  await Product.findByIdAndUpdate(id, { name });
+  revalidatePath("/products");
+}
+
 export async function deleteProduct(id: string) {
   await connectDB();
   await Product.findByIdAndDelete(id);

@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -8,6 +7,8 @@ import {
   LayoutDashboard,
   Users,
   ClipboardCheck,
+  LogOut,
+  LogIn,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -22,9 +23,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-type NavbarProps = {
-  variant?: "public" | "admin";
-};
+import { logoutAction } from "@/app/admin/login/actions";
 
 type NavLink = {
   name: string;
@@ -35,45 +34,27 @@ type NavLink = {
 const publicLinks: NavLink[] = [
   { name: "Home", href: "/" },
   { name: "About", href: "/about" },
-  { name: "Services", href: "/services" },
+  { name: "Products", href: "/products" },
   { name: "Contact", href: "/contact" },
 ];
 
 const adminLinks: NavLink[] = [
-  {
-    name: "Dashboard",
-    href: "/admin/dashboard",
-    icon: LayoutDashboard,
-  },
-  {
-    name: "Employees",
-    href: "/admin/employee",
-    icon: Users,
-  },
-  {
-    name: "Layout",
-    href: "/admin/layout",
-    icon: ClipboardCheck,
-  },
+  { name: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { name: "Employees", href: "/admin/employee", icon: Users },
+  { name: "Layout", href: "/admin/layout", icon: ClipboardCheck },
 ];
 
-export default function Navbar({
-  variant = "public",
-}: NavbarProps) {
+export default function Navbar({ loggedIn }: { loggedIn: boolean }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  const isAdmin = variant === "admin";
-  const links = isAdmin ? adminLinks : publicLinks;
+  const links = loggedIn ? adminLinks : publicLinks;
 
-  // Active route check
-  const isActive = (href: string) => {
-    return href === "/"
+  const isActive = (href: string) =>
+    href === "/"
       ? pathname === "/"
       : pathname === href || pathname.startsWith(`${href}/`);
-  };
 
-  // Navigation link styles
   const linkClass = (href: string) =>
     `flex items-center gap-2 text-sm font-medium transition-colors ${
       isActive(href)
@@ -81,37 +62,32 @@ export default function Navbar({
         : "text-muted-foreground hover:text-primary"
     }`;
 
-  // Action button
-  const actionHref = isAdmin ? "/" : "/admin/login";
-  const actionLabel = isAdmin ? "Back to Website" : "Admin Login";
-
-  const handleNavigation = () => {
-    router.push(actionHref);
+  const handleLogout = async () => {
+    await logoutAction();
+    router.push("/");
+    router.refresh();
   };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-
         {/* Logo */}
         <Link
-          href={isAdmin ? "/admin/dashboard" : "/"}
+          href={loggedIn ? "/admin/dashboard" : "/"}
           className="text-xl font-bold"
         >
           Shunyi <span className="text-primary">Garments</span>
-
-          {isAdmin && (
+          {loggedIn && (
             <span className="ml-2 text-xs font-medium text-muted-foreground">
               Admin
             </span>
           )}
         </Link>
 
-        {/* Desktop Navigation */}
+        {/* Desktop Nav */}
         <nav className="hidden items-center gap-6 md:flex">
           {links.map((link) => {
             const Icon = link.icon;
-
             return (
               <Link
                 key={link.href}
@@ -128,18 +104,22 @@ export default function Navbar({
 
         {/* Desktop Action */}
         <div className="hidden md:block">
-          <Button
-            variant={isAdmin ? "outline" : "default"}
-            onClick={handleNavigation}
-          >
-            {actionLabel}
-          </Button>
+          {loggedIn ? (
+            <Button variant="outline" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+            </Button>
+          ) : (
+            <Button onClick={() => router.push("/admin/login")}>
+              <LogIn className="mr-2 h-4 w-4" />
+              Admin Login
+            </Button>
+          )}
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile */}
         <Sheet>
           <SheetTrigger
-            type="button"
             className="rounded-md p-2 transition-colors hover:bg-muted md:hidden"
             aria-label="Open menu"
           >
@@ -149,16 +129,13 @@ export default function Navbar({
           <SheetContent side="right">
             <SheetHeader>
               <SheetTitle>
-                Shunyi Garments {isAdmin ? "Admin" : ""}
+                Shunyi Garments {loggedIn ? "Admin" : ""}
               </SheetTitle>
             </SheetHeader>
 
             <div className="mt-6 flex flex-col gap-5 px-4">
-
-              {/* Mobile Links */}
               {links.map((link) => {
                 const Icon = link.icon;
-
                 return (
                   <SheetClose
                     key={link.href}
@@ -180,18 +157,32 @@ export default function Navbar({
 
               <Separator />
 
-              {/* Mobile Action */}
-              <SheetClose
-                render={
-                  <Button
-                    className="w-full"
-                    variant={isAdmin ? "outline" : "default"}
-                    onClick={handleNavigation}
-                  />
-                }
-              >
-                {actionLabel}
-              </SheetClose>
+              {loggedIn ? (
+                <SheetClose
+                  render={
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      onClick={handleLogout}
+                    />
+                  }
+                >
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </SheetClose>
+              ) : (
+                <SheetClose
+                  render={
+                    <Button
+                      className="w-full"
+                      onClick={() => router.push("/admin/login")}
+                    />
+                  }
+                >
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Admin Login
+                </SheetClose>
+              )}
             </div>
           </SheetContent>
         </Sheet>
