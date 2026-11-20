@@ -37,8 +37,9 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useAdminI18n } from "@/components/admin/i18n-provider";
 
-const nf = new Intl.NumberFormat("en-US");
+
 
 export default function ProductionPage() {
   const [products, setProducts] = useState<IProduct[]>([]);
@@ -46,6 +47,8 @@ export default function ProductionPage() {
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState("");
   const [pending, startTransition] = useTransition();
+  const { t: dict, nf } = useAdminI18n();
+  const t = dict.prod;
 
   // Product name edit states
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
@@ -123,7 +126,7 @@ export default function ProductionPage() {
   };
 
   const handleDeleteProduct = (id: string) => {
-    if (!confirm("Delete this product?")) return;
+    if (!confirm(t.confirmDelete)) return;
     startTransition(async () => {
       await deleteProduct(id);
       setProducts((prev) => prev.filter((p) => p._id !== id));
@@ -252,16 +255,16 @@ export default function ProductionPage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Production</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Log daily pieces in and out, and define the process steps for each product.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t.title}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t.subtitle}</p>
       </div>
 
       <div className="grid items-start gap-6 lg:grid-cols-[280px_1fr]">
         {/* ================= Product list ================= */}
         <Card size="sm" className="rounded-2xl shadow-none ring-border lg:sticky lg:top-20">
           <CardHeader>
-            <CardTitle className="font-semibold">Products</CardTitle>
-            <CardDescription>{products.length} total</CardDescription>
+            <CardTitle className="font-semibold">{t.products}</CardTitle>
+            <CardDescription>{t.total(products.length)}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <form
@@ -271,8 +274,8 @@ export default function ProductionPage() {
                 handleCreate();
               }}
             >
-              <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="New product name" aria-label="New product name" />
-              <Button type="submit" size="icon" disabled={!newName.trim() || pending} aria-label="Add product">
+              <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t.newProductName} aria-label={t.newProductName} />
+              <Button type="submit" size="icon" disabled={!newName.trim() || pending} aria-label={t.addProduct}>
                 <PlusIcon />
               </Button>
             </form>
@@ -290,12 +293,12 @@ export default function ProductionPage() {
                           if (e.key === "Escape") handleCancelEditProduct();
                         }}
                         className="h-8"
-                        aria-label="Product name"
+                        aria-label={t.productName}
                       />
-                      <Button size="icon-sm" variant="ghost" onClick={handleSaveProductName} aria-label="Save name">
+                      <Button size="icon-sm" variant="ghost" onClick={handleSaveProductName} aria-label={t.saveName}>
                         <CheckIcon />
                       </Button>
-                      <Button size="icon-sm" variant="ghost" onClick={handleCancelEditProduct} aria-label="Cancel">
+                      <Button size="icon-sm" variant="ghost" onClick={handleCancelEditProduct} aria-label={t.cancel}>
                         <XIcon />
                       </Button>
                     </div>
@@ -318,7 +321,7 @@ export default function ProductionPage() {
               ))}
               {products.length === 0 && (
                 <li className="rounded-lg border border-dashed px-3 py-6 text-center text-xs text-muted-foreground">
-                  No products yet. Name one above to start.
+                  {t.noProducts}
                 </li>
               )}
             </ul>
@@ -330,8 +333,8 @@ export default function ProductionPage() {
           <Card className="rounded-2xl shadow-none ring-border">
             <CardContent className="flex flex-col items-center gap-2 py-16 text-center">
               <BoxesIcon className="size-8 text-muted-foreground" />
-              <p className="font-medium">Select or create a product</p>
-              <p className="text-sm text-muted-foreground">Its inputs, outputs and process steps will appear here.</p>
+              <p className="font-medium">{t.selectOrCreate}</p>
+              <p className="text-sm text-muted-foreground">{t.selectDesc}</p>
             </CardContent>
           </Card>
         ) : (
@@ -349,41 +352,41 @@ export default function ProductionPage() {
                         if (e.key === "Escape") handleCancelEditProduct();
                       }}
                       className="h-10 max-w-sm text-lg font-semibold"
-                      aria-label="Product name"
+                      aria-label={t.productName}
                     />
                     <Button size="sm" onClick={handleSaveProductName}>
-                      Save
+                      {t.save}
                     </Button>
                     <Button size="sm" variant="ghost" onClick={handleCancelEditProduct}>
-                      Cancel
+                      {t.cancel}
                     </Button>
                   </div>
                 ) : (
                   <CardTitle className="text-xl font-semibold tracking-tight">{selected.name}</CardTitle>
                 )}
-                <CardDescription>{steps.length} process steps · {selected.inputs.length + selected.outputs.length} entries logged</CardDescription>
+                <CardDescription>{t.stepsEntries(steps.length, selected.inputs.length + selected.outputs.length)}</CardDescription>
                 {editingProductId !== selected._id && (
                   <CardAction className="flex gap-1.5">
                     <Button size="sm" variant="outline" onClick={() => handleStartEditProduct(selected)}>
-                      <PencilIcon /> Rename
+                      <PencilIcon /> {t.rename}
                     </Button>
                     <Button size="sm" variant="destructive" onClick={() => handleDeleteProduct(selected._id!)}>
-                      <Trash2Icon /> Delete
+                      <Trash2Icon /> {t.delete}
                     </Button>
                   </CardAction>
                 )}
               </CardHeader>
               <CardContent className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-xl bg-muted/60 p-4">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><PackageOpenIcon className="size-3.5" /> Received</div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><PackageOpenIcon className="size-3.5" /> {t.received}</div>
                   <div className="tnum mt-1 text-2xl font-semibold">{nf.format(received)}</div>
                 </div>
                 <div className="rounded-xl bg-muted/60 p-4">
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><PackageCheckIcon className="size-3.5" /> Finished</div>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground"><PackageCheckIcon className="size-3.5" /> {t.finished}</div>
                   <div className="tnum mt-1 text-2xl font-semibold">{nf.format(finished)}</div>
                 </div>
                 <div className="rounded-xl bg-primary p-4 text-primary-foreground">
-                  <div className="text-xs text-primary-foreground/70">Completion</div>
+                  <div className="text-xs text-primary-foreground/70">{t.completion}</div>
                   <div className="tnum mt-1 text-2xl font-semibold">{rate}%</div>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/15">
                     <div className="h-full rounded-full bg-[var(--signal)]" style={{ width: `${Math.min(rate, 100)}%` }} />
@@ -394,17 +397,17 @@ export default function ProductionPage() {
 
             <Tabs defaultValue="input">
               <TabsList className="bg-card ring-1 ring-border">
-                <TabsTrigger value="input">Input <span className="tnum ml-1 text-muted-foreground">{selected.inputs.length}</span></TabsTrigger>
-                <TabsTrigger value="output">Output <span className="tnum ml-1 text-muted-foreground">{selected.outputs.length}</span></TabsTrigger>
-                <TabsTrigger value="process">Process steps <span className="tnum ml-1 text-muted-foreground">{steps.length}</span></TabsTrigger>
+                <TabsTrigger value="input">{t.inputTab} <span className="tnum ml-1 text-muted-foreground">{selected.inputs.length}</span></TabsTrigger>
+                <TabsTrigger value="output">{t.outputTab} <span className="tnum ml-1 text-muted-foreground">{selected.outputs.length}</span></TabsTrigger>
+                <TabsTrigger value="process">{t.stepsTab} <span className="tnum ml-1 text-muted-foreground">{steps.length}</span></TabsTrigger>
               </TabsList>
 
               {/* ---------- INPUT ---------- */}
               <TabsContent value="input">
                 <Card className="rounded-2xl shadow-none ring-border">
                   <CardHeader>
-                    <CardTitle className="font-semibold">Input</CardTitle>
-                    <CardDescription>কোন দিন কি কাজ, কত পিস: which work came in, on which day, how many pieces.</CardDescription>
+                    <CardTitle className="font-semibold">{t.inputTab}</CardTitle>
+                    <CardDescription>{t.inputDesc}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <form
@@ -414,21 +417,21 @@ export default function ProductionPage() {
                         handleAddInput();
                       }}
                     >
-                      <Input type="date" value={inDate} onChange={(e) => setInDate(e.target.value)} aria-label="Date" required />
-                      <Input placeholder="Work name" value={inWork} onChange={(e) => setInWork(e.target.value)} aria-label="Work name" required />
-                      <Input type="number" min={1} placeholder="Pieces" value={inPieces || ""} onChange={(e) => setInPieces(Number(e.target.value))} aria-label="Pieces" required />
-                      <Input placeholder="Note (optional)" value={inNote} onChange={(e) => setInNote(e.target.value)} aria-label="Note" />
-                      <Button type="submit" disabled={pending}><PlusIcon /> Add input</Button>
+                      <Input type="date" value={inDate} onChange={(e) => setInDate(e.target.value)} aria-label={t.date} required />
+                      <Input placeholder={t.workName} value={inWork} onChange={(e) => setInWork(e.target.value)} aria-label={t.workName} required />
+                      <Input type="number" min={1} placeholder={t.pieces} value={inPieces || ""} onChange={(e) => setInPieces(Number(e.target.value))} aria-label={t.pieces} required />
+                      <Input placeholder={t.noteOptional} value={inNote} onChange={(e) => setInNote(e.target.value)} aria-label={t.note} />
+                      <Button type="submit" disabled={pending}><PlusIcon /> {t.addInput}</Button>
                     </form>
                     <div className="overflow-hidden rounded-xl border">
                       <Table>
                         <TableHeader className="bg-muted/50">
                           <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Work</TableHead>
-                            <TableHead className="text-right">Pieces</TableHead>
-                            <TableHead>Note</TableHead>
-                            <TableHead className="w-10"><span className="sr-only">Actions</span></TableHead>
+                            <TableHead>{t.date}</TableHead>
+                            <TableHead>{t.work}</TableHead>
+                            <TableHead className="text-right">{t.pieces}</TableHead>
+                            <TableHead>{t.note}</TableHead>
+                            <TableHead className="w-10"><span className="sr-only">{t.actions}</span></TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -439,7 +442,7 @@ export default function ProductionPage() {
                               <TableCell className="tnum text-right font-medium">{nf.format(i.pieces)}</TableCell>
                               <TableCell className="max-w-48 truncate text-muted-foreground">{i.note}</TableCell>
                               <TableCell>
-                                <Button size="icon-xs" variant="ghost" onClick={() => handleDeleteInput(i._id!)} aria-label="Delete input" className="text-muted-foreground hover:text-destructive">
+                                <Button size="icon-xs" variant="ghost" onClick={() => handleDeleteInput(i._id!)} aria-label={t.deleteInput} className="text-muted-foreground hover:text-destructive">
                                   <Trash2Icon />
                                 </Button>
                               </TableCell>
@@ -447,7 +450,7 @@ export default function ProductionPage() {
                           ))}
                           {selected.inputs.length === 0 && (
                             <TableRow>
-                              <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">No input logged yet.</TableCell>
+                              <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">{t.noInput}</TableCell>
                             </TableRow>
                           )}
                         </TableBody>
@@ -461,8 +464,8 @@ export default function ProductionPage() {
               <TabsContent value="output">
                 <Card className="rounded-2xl shadow-none ring-border">
                   <CardHeader>
-                    <CardTitle className="font-semibold">Output</CardTitle>
-                    <CardDescription>কোন দিন কত পিস: finished pieces per day.</CardDescription>
+                    <CardTitle className="font-semibold">{t.outputTab}</CardTitle>
+                    <CardDescription>{t.outputDesc}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <form
@@ -472,19 +475,19 @@ export default function ProductionPage() {
                         handleAddOutput();
                       }}
                     >
-                      <Input type="date" value={outDate} onChange={(e) => setOutDate(e.target.value)} aria-label="Date" required />
-                      <Input type="number" min={1} placeholder="Pieces" value={outPieces || ""} onChange={(e) => setOutPieces(Number(e.target.value))} aria-label="Pieces" required />
-                      <Input placeholder="Note (optional)" value={outNote} onChange={(e) => setOutNote(e.target.value)} aria-label="Note" />
-                      <Button type="submit" disabled={pending} className="bg-[var(--signal)] hover:bg-[var(--signal)]/90"><PlusIcon /> Add output</Button>
+                      <Input type="date" value={outDate} onChange={(e) => setOutDate(e.target.value)} aria-label={t.date} required />
+                      <Input type="number" min={1} placeholder={t.pieces} value={outPieces || ""} onChange={(e) => setOutPieces(Number(e.target.value))} aria-label={t.pieces} required />
+                      <Input placeholder={t.noteOptional} value={outNote} onChange={(e) => setOutNote(e.target.value)} aria-label={t.note} />
+                      <Button type="submit" disabled={pending} className="bg-[var(--signal)] hover:bg-[var(--signal)]/90"><PlusIcon /> {t.addOutput}</Button>
                     </form>
                     <div className="overflow-hidden rounded-xl border">
                       <Table>
                         <TableHeader className="bg-muted/50">
                           <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead className="text-right">Pieces</TableHead>
-                            <TableHead>Note</TableHead>
-                            <TableHead className="w-10"><span className="sr-only">Actions</span></TableHead>
+                            <TableHead>{t.date}</TableHead>
+                            <TableHead className="text-right">{t.pieces}</TableHead>
+                            <TableHead>{t.note}</TableHead>
+                            <TableHead className="w-10"><span className="sr-only">{t.actions}</span></TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -494,7 +497,7 @@ export default function ProductionPage() {
                               <TableCell className="tnum text-right font-medium">{nf.format(o.pieces)}</TableCell>
                               <TableCell className="max-w-64 truncate text-muted-foreground">{o.note}</TableCell>
                               <TableCell>
-                                <Button size="icon-xs" variant="ghost" onClick={() => handleDeleteOutput(o._id!)} aria-label="Delete output" className="text-muted-foreground hover:text-destructive">
+                                <Button size="icon-xs" variant="ghost" onClick={() => handleDeleteOutput(o._id!)} aria-label={t.deleteOutput} className="text-muted-foreground hover:text-destructive">
                                   <Trash2Icon />
                                 </Button>
                               </TableCell>
@@ -502,7 +505,7 @@ export default function ProductionPage() {
                           ))}
                           {selected.outputs.length === 0 && (
                             <TableRow>
-                              <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">No output logged yet.</TableCell>
+                              <TableCell colSpan={4} className="py-8 text-center text-muted-foreground">{t.noOutput}</TableCell>
                             </TableRow>
                           )}
                         </TableBody>
@@ -516,8 +519,8 @@ export default function ProductionPage() {
               <TabsContent value="process">
                 <Card className="rounded-2xl shadow-none ring-border">
                   <CardHeader>
-                    <CardTitle className="font-semibold">Process steps</CardTitle>
-                    <CardDescription>কাজের ধাপ: the order work moves through for this product.</CardDescription>
+                    <CardTitle className="font-semibold">{t.stepsTab}</CardTitle>
+                    <CardDescription>{t.stepsDesc}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <form
@@ -527,15 +530,15 @@ export default function ProductionPage() {
                         handleSubmitProcess();
                       }}
                     >
-                      <Input placeholder="Step title" value={pTitle} onChange={(e) => setPTitle(e.target.value)} aria-label="Step title" required />
-                      <Input placeholder="Description" value={pDesc} onChange={(e) => setPDesc(e.target.value)} aria-label="Description" />
-                      <Input placeholder="Label" value={pLabel} onChange={(e) => setPLabel(e.target.value)} aria-label="Label" />
+                      <Input placeholder={t.stepTitle} value={pTitle} onChange={(e) => setPTitle(e.target.value)} aria-label={t.stepTitle} required />
+                      <Input placeholder={t.description} value={pDesc} onChange={(e) => setPDesc(e.target.value)} aria-label={t.description} />
+                      <Input placeholder={t.label} value={pLabel} onChange={(e) => setPLabel(e.target.value)} aria-label={t.label} />
                       <div className="flex gap-2">
                         <Button type="submit" disabled={pending}>
-                          {editing ? <CheckIcon /> : <PlusIcon />} {editing ? "Update step" : "Add step"}
+                          {editing ? <CheckIcon /> : <PlusIcon />} {editing ? t.updateStep : t.addStep}
                         </Button>
                         {editing && (
-                          <Button type="button" variant="ghost" onClick={resetProcessForm}>Cancel</Button>
+                          <Button type="button" variant="ghost" onClick={resetProcessForm}>{t.cancel}</Button>
                         )}
                       </div>
                     </form>
@@ -557,16 +560,16 @@ export default function ProductionPage() {
                               {p.description && <p className="mt-0.5 text-sm text-muted-foreground">{p.description}</p>}
                             </div>
                             <div className="flex shrink-0 items-center gap-0.5">
-                              <Button size="icon-sm" variant="ghost" disabled={i === 0} onClick={() => handleMoveProcess(p._id!, -1)} aria-label="Move up">
+                              <Button size="icon-sm" variant="ghost" disabled={i === 0} onClick={() => handleMoveProcess(p._id!, -1)} aria-label={t.moveUp}>
                                 <ArrowUpIcon />
                               </Button>
-                              <Button size="icon-sm" variant="ghost" disabled={i === steps.length - 1} onClick={() => handleMoveProcess(p._id!, 1)} aria-label="Move down">
+                              <Button size="icon-sm" variant="ghost" disabled={i === steps.length - 1} onClick={() => handleMoveProcess(p._id!, 1)} aria-label={t.moveDown}>
                                 <ArrowDownIcon />
                               </Button>
-                              <Button size="icon-sm" variant="ghost" onClick={() => handleEditProcess(p)} aria-label="Edit step">
+                              <Button size="icon-sm" variant="ghost" onClick={() => handleEditProcess(p)} aria-label={t.editStep}>
                                 <PencilIcon />
                               </Button>
-                              <Button size="icon-sm" variant="ghost" onClick={() => handleDeleteProcess(p._id!)} aria-label="Delete step" className="text-muted-foreground hover:text-destructive">
+                              <Button size="icon-sm" variant="ghost" onClick={() => handleDeleteProcess(p._id!)} aria-label={t.deleteStep} className="text-muted-foreground hover:text-destructive">
                                 <Trash2Icon />
                               </Button>
                             </div>
@@ -576,7 +579,7 @@ export default function ProductionPage() {
                     ) : (
                       <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed py-10 text-center">
                         <WorkflowIcon className="size-6 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">No process steps yet. Add the first step above.</p>
+                        <p className="text-sm text-muted-foreground">{t.noSteps}</p>
                       </div>
                     )}
                   </CardContent>

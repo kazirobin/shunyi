@@ -15,6 +15,8 @@ import {
   UsersIcon,
 } from "lucide-react";
 
+import { formatYmd, getAdminDict, INTL, type AdminLocale } from "@/components/admin/i18n";
+import { getAdminLocale } from "@/lib/admin-locale";
 import { ThroughputChart, type ThroughputPoint } from "@/components/admin/throughput-chart";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,19 +35,18 @@ import type { IProduct } from "../layout/types";
 
 export const metadata: Metadata = { title: "Dashboard" };
 
-const nf = new Intl.NumberFormat("en-US");
 const sum = (xs: { pieces: number }[]) => xs.reduce((n, x) => n + (Number(x.pieces) || 0), 0);
 const pct = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 100) : 0);
 
-const STATUS: { key: Employee["status"]; label: string; bar: string }[] = [
-  { key: "active", label: "Active", bar: "bg-[var(--success)]" },
-  { key: "pending", label: "Pending", bar: "bg-[var(--warning)]" },
-  { key: "inactive", label: "Inactive", bar: "bg-muted-foreground/50" },
-  { key: "rejected", label: "Rejected", bar: "bg-destructive" },
+const STATUS: { key: Employee["status"]; bar: string }[] = [
+  { key: "active", bar: "bg-[var(--success)]" },
+  { key: "pending", bar: "bg-[var(--warning)]" },
+  { key: "inactive", bar: "bg-muted-foreground/50" },
+  { key: "rejected", bar: "bg-destructive" },
 ];
 const GRADES: Employee["grade"][] = ["a", "b", "c", "d", "e"];
 
-function throughput(products: IProduct[]): ThroughputPoint[] {
+function throughput(products: IProduct[], locale: AdminLocale): ThroughputPoint[] {
   const days = new Map<string, { received: number; finished: number }>();
   const add = (date: string, k: "received" | "finished", n: number) => {
     if (!date) return;
@@ -60,13 +61,7 @@ function throughput(products: IProduct[]): ThroughputPoint[] {
   return [...days.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
     .slice(-30)
-    .map(([date, v]) => {
-      const d = new Date(`${date}T00:00:00`);
-      const label = Number.isNaN(d.getTime())
-        ? date
-        : d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-      return { date, label, ...v };
-    });
+    .map(([date, v]) => ({ date, label: formatYmd(locale, date, { month: "short", day: "numeric" }), ...v }));
 }
 
 function initials(name: string) {
@@ -152,6 +147,10 @@ async function loadProducts(): Promise<{ ok: true; data: IProduct[] } | { ok: fa
 
 async function DashboardData() {
   await connection();
+  const locale = await getAdminLocale();
+  const t = getAdminDict(locale);
+  const d = t.dash;
+  const nf = new Intl.NumberFormat(INTL[locale]);
   const [empRes, prodRes, att] = await Promise.all([loadEmployees(), loadProducts(), getLatestAttendanceSummary()]);
   const employees: Employee[] = empRes.ok ? empRes.data : [];
   const products: IProduct[] = prodRes.ok ? prodRes.data : [];
@@ -163,7 +162,7 @@ async function DashboardData() {
   const finished = products.reduce((n, p) => n + sum(p.outputs), 0);
   const processes = products.reduce((n, p) => n + p.processes.length, 0);
   const rate = pct(finished, received);
-  const series = throughput(products);
+  const series = throughput(products, locale);
   const pending = employees.filter((e) => e.status === "pending");
   const maxGrade = Math.max(1, ...Object.values(byGrade));
 
@@ -172,25 +171,25 @@ async function DashboardData() {
       {failed && (
         <div className="flex items-start gap-3 rounded-xl border border-destructive/25 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           <CircleAlertIcon className="mt-0.5 size-4 shrink-0" />
-          Some data could not be loaded. Check the database connection, then reload the page.
+          {d.loadError}
         </div>
       )}
 
       {/* KPIs */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Kpi label="Employees" value={nf.format(employees.length)} icon={UsersIcon}>
-          <span className="font-medium text-[var(--success)]">{nf.format(byStatus.active ?? 0)} active</span>
-          {pending.length > 0 && <> · {nf.format(pending.length)} pending review</>}
+        <Kpi label={d.employees} value={nf.format(employees.length)} icon={UsersIcon}>
+          <span className="font-medium text-[var(--success)]">{d.active(nf.format(byStatus.active ?? 0))}</span>
+          {pending.length > 0 && <> · {d.pendingReview(nf.format(pending.length))}</>}
         </Kpi>
-        <Kpi label="Products in production" value={nf.format(products.length)} icon={BoxesIcon}>
-          {nf.format(processes)} process steps defined
+        <Kpi label={d.products} value={nf.format(products.length)} icon={BoxesIcon}>
+          {d.stepsDefined(nf.format(processes))}
         </Kpi>
-        <Kpi label="Pieces received" value={nf.format(received)} icon={PackageOpenIcon}>
-          Across {nf.format(products.reduce((n, p) => n + p.inputs.length, 0))} input entries
+        <Kpi label={d.received} value={nf.format(received)} icon={PackageOpenIcon}>
+          {d.acrossEntries(nf.format(products.reduce((n, p) => n + p.inputs.length, 0)))}
         </Kpi>
         <Card size="sm" className="gap-3 rounded-2xl bg-primary text-primary-foreground shadow-none ring-0">
           <CardHeader>
-            <CardDescription className="text-[13px] text-primary-foreground/70">Pieces finished</CardDescription>
+            <CardDescription className="text-[13px] text-primary-foreground/70">{d.finished}</CardDescription>
             <CardAction>
               <span className="flex size-8 items-center justify-center rounded-lg bg-[var(--signal)] text-white">
                 <PackageCheckIcon className="size-4" />
@@ -203,7 +202,7 @@ async function DashboardData() {
               <div className="h-full rounded-full bg-[var(--signal)]" style={{ width: `${Math.min(rate, 100)}%` }} />
             </div>
             <div className="text-xs text-primary-foreground/70">
-              <span className="tnum font-medium text-white">{rate}%</span> of received pieces
+              <span className="tnum font-medium text-white">{rate}%</span> {d.ofReceived}
             </div>
           </CardContent>
         </Card>
@@ -213,20 +212,20 @@ async function DashboardData() {
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="rounded-2xl shadow-none ring-border xl:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Daily throughput</CardTitle>
-            <CardDescription>Pieces received and finished per day, last 30 working days</CardDescription>
+            <CardTitle className="text-base font-semibold">{d.throughput}</CardTitle>
+            <CardDescription>{d.throughputDesc}</CardDescription>
             <CardAction>
               <Button size="sm" variant="ghost" nativeButton={false} render={<Link href="/admin/layout" />}>
-                Log entry <ArrowRightIcon />
+                {d.logEntry} <ArrowRightIcon />
               </Button>
             </CardAction>
           </CardHeader>
           <CardContent>
             {series.length > 0 ? (
-              <ThroughputChart data={series} />
+              <ThroughputChart data={series} labels={{ received: d.seriesReceived, finished: d.seriesFinished }} />
             ) : (
-              <EmptyNote href="/admin/layout" cta="Open production">
-                No input or output entries yet. Log daily pieces on a product to see the trend here.
+              <EmptyNote href="/admin/layout" cta={d.openProduction}>
+                {d.throughputEmpty}
               </EmptyNote>
             )}
           </CardContent>
@@ -234,10 +233,10 @@ async function DashboardData() {
 
         <Card className="rounded-2xl shadow-none ring-border">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Workforce</CardTitle>
-            <CardDescription>{nf.format(employees.length)} people on record</CardDescription>
+            <CardTitle className="text-base font-semibold">{d.workforce}</CardTitle>
+            <CardDescription>{d.onRecord(nf.format(employees.length))}</CardDescription>
             <CardAction>
-              <Button size="icon-sm" variant="ghost" aria-label="Open employees" nativeButton={false} render={<Link href="/admin/employee" />}>
+              <Button size="icon-sm" variant="ghost" aria-label={d.openEmployees} nativeButton={false} render={<Link href="/admin/employee" />}>
                 <ArrowUpRightIcon />
               </Button>
             </CardAction>
@@ -254,13 +253,13 @@ async function DashboardData() {
               {STATUS.map((s) => (
                 <li key={s.key} className="flex items-center gap-2 text-sm">
                   <span className={`size-2 rounded-full ${s.bar}`} />
-                  <span className="text-muted-foreground">{s.label}</span>
+                  <span className="text-muted-foreground">{t.status[s.key]}</span>
                   <span className="tnum ml-auto font-medium">{nf.format(byStatus[s.key] ?? 0)}</span>
                 </li>
               ))}
             </ul>
             <div className="space-y-3 border-t pt-5">
-              <div className="text-xs font-medium text-muted-foreground">By grade</div>
+              <div className="text-xs font-medium text-muted-foreground">{d.byGrade}</div>
               <div className="flex h-24 items-end gap-2">
                 {GRADES.map((g) => (
                   <div key={g} className="flex flex-1 flex-col items-center gap-1.5">
@@ -282,18 +281,18 @@ async function DashboardData() {
       <div className="grid gap-4 xl:grid-cols-3">
         <Card className="rounded-2xl shadow-none ring-border xl:col-span-2">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Production lines</CardTitle>
-            <CardDescription>Expand a product to see its process steps and latest entries</CardDescription>
+            <CardTitle className="text-base font-semibold">{d.lines}</CardTitle>
+            <CardDescription>{d.linesDesc}</CardDescription>
             <CardAction>
               <Button size="sm" variant="outline" nativeButton={false} render={<Link href="/admin/layout" />}>
-                <PlusIcon /> New product
+                <PlusIcon /> {d.newProduct}
               </Button>
             </CardAction>
           </CardHeader>
           <CardContent>
             {products.length === 0 ? (
-              <EmptyNote href="/admin/layout" cta="Create a product">
-                No products yet. Create one to start tracking inputs, outputs and process steps.
+              <EmptyNote href="/admin/layout" cta={d.createProduct}>
+                {d.linesEmpty}
               </EmptyNote>
             ) : (
               <Accordion defaultValue={[products[0]._id]} className="rounded-xl">
@@ -303,8 +302,8 @@ async function DashboardData() {
                   const prate = pct(pout, pin);
                   const steps = [...p.processes].sort((a, b) => a.serial - b.serial);
                   const recent = [
-                    ...p.inputs.map((e) => ({ id: e._id, date: e.date, kind: "In" as const, what: e.workName, pieces: e.pieces })),
-                    ...p.outputs.map((e) => ({ id: e._id, date: e.date, kind: "Out" as const, what: e.note || "Finished", pieces: e.pieces })),
+                    ...p.inputs.map((e) => ({ id: e._id, date: e.date, kind: "in" as const, what: e.workName, pieces: e.pieces })),
+                    ...p.outputs.map((e) => ({ id: e._id, date: e.date, kind: "out" as const, what: e.note || d.finishedDefault, pieces: e.pieces })),
                   ]
                     .sort((a, b) => b.date.localeCompare(a.date))
                     .slice(0, 4);
@@ -318,7 +317,7 @@ async function DashboardData() {
                           <span className="min-w-0">
                             <span className="block truncate font-medium">{p.name}</span>
                             <span className="tnum block text-xs font-normal text-muted-foreground">
-                              {nf.format(pout)} / {nf.format(pin)} pieces · {steps.length} steps
+                              {d.piecesSteps(nf.format(pout), nf.format(pin), steps.length)}
                             </span>
                           </span>
                         </span>
@@ -330,7 +329,7 @@ async function DashboardData() {
                       <AccordionContent>
                         <div className="grid gap-6 pt-1 md:grid-cols-2">
                           <div>
-                            <div className="mb-3 text-xs font-medium text-muted-foreground">Process steps</div>
+                            <div className="mb-3 text-xs font-medium text-muted-foreground">{d.processSteps}</div>
                             {steps.length ? (
                               <ol className="relative space-y-3 border-l pl-5">
                                 {steps.map((s) => (
@@ -347,20 +346,20 @@ async function DashboardData() {
                                 ))}
                               </ol>
                             ) : (
-                              <p className="text-sm text-muted-foreground">No process steps defined.</p>
+                              <p className="text-sm text-muted-foreground">{d.noSteps}</p>
                             )}
                           </div>
                           <div>
-                            <div className="mb-3 text-xs font-medium text-muted-foreground">Latest entries</div>
+                            <div className="mb-3 text-xs font-medium text-muted-foreground">{d.latestEntries}</div>
                             {recent.length ? (
                               <ul className="divide-y rounded-lg border bg-card">
                                 {recent.map((r) => (
                                   <li key={`${r.kind}-${r.id}`} className="flex items-center gap-3 px-3 py-2">
                                     <Badge
                                       variant="outline"
-                                      className={r.kind === "In" ? "text-[var(--chart-2)]" : "border-[var(--signal)]/30 text-[var(--signal)]"}
+                                      className={r.kind === "in" ? "text-[var(--chart-2)]" : "border-[var(--signal)]/30 text-[var(--signal)]"}
                                     >
-                                      {r.kind}
+                                      {d[r.kind]}
                                     </Badge>
                                     <span className="min-w-0 flex-1 truncate">{r.what}</span>
                                     <span className="tnum text-xs text-muted-foreground">{r.date}</span>
@@ -369,7 +368,7 @@ async function DashboardData() {
                                 ))}
                               </ul>
                             ) : (
-                              <p className="text-sm text-muted-foreground">No entries logged.</p>
+                              <p className="text-sm text-muted-foreground">{d.noEntries}</p>
                             )}
                           </div>
                         </div>
@@ -385,14 +384,14 @@ async function DashboardData() {
         <div className="space-y-4">
         <Card className="rounded-2xl shadow-none ring-border">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Latest attendance</CardTitle>
+            <CardTitle className="text-base font-semibold">{d.latestAttendance}</CardTitle>
             <CardDescription>
               {att
-                ? new Date(`${att.date}T00:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" })
-                : "No register marked yet"}
+                ? formatYmd(locale, att.date, { weekday: "short", month: "short", day: "numeric", year: "numeric" })
+                : d.noRegister}
             </CardDescription>
             <CardAction>
-              <Button size="icon-sm" variant="ghost" aria-label="Open attendance" nativeButton={false} render={<Link href="/admin/attendance" />}>
+              <Button size="icon-sm" variant="ghost" aria-label={d.openAttendance} nativeButton={false} render={<Link href="/admin/attendance" />}>
                 <ArrowUpRightIcon />
               </Button>
             </CardAction>
@@ -401,10 +400,10 @@ async function DashboardData() {
             {att ? (
               (() => {
                 const parts = [
-                  { label: "Present", n: att.present, bar: "bg-[var(--success)]" },
-                  { label: "Late", n: att.late, bar: "bg-[var(--warning)]" },
-                  { label: "Absent", n: att.absent, bar: "bg-destructive" },
-                  { label: "Leave", n: att.leave, bar: "bg-[var(--chart-3)]" },
+                  { label: t.att.present, n: att.present, bar: "bg-[var(--success)]" },
+                  { label: t.att.late, n: att.late, bar: "bg-[var(--warning)]" },
+                  { label: t.att.absent, n: att.absent, bar: "bg-destructive" },
+                  { label: t.att.leave, n: att.leave, bar: "bg-[var(--chart-3)]" },
                 ];
                 const marked = att.present + att.late + att.absent + att.leave;
                 const unmarked = Math.max(0, att.active - marked);
@@ -413,7 +412,7 @@ async function DashboardData() {
                   <div className="space-y-4">
                     <div className="flex items-baseline gap-2">
                       <span className="tnum text-3xl font-semibold tracking-tight">{pct(att.present + att.late, Math.max(1, marked))}%</span>
-                      <span className="text-xs text-muted-foreground">attended of {nf.format(marked)} marked</span>
+                      <span className="text-xs text-muted-foreground">{d.attendedOf(nf.format(marked))}</span>
                     </div>
                     <div className="flex h-2.5 overflow-hidden rounded-full bg-muted">
                       {parts.map((x) => (x.n ? <div key={x.label} className={x.bar} style={{ width: `${(x.n / total) * 100}%` }} /> : null))}
@@ -429,7 +428,7 @@ async function DashboardData() {
                       {unmarked > 0 && (
                         <li className="col-span-2 flex items-center gap-2 text-xs text-muted-foreground">
                           <span className="size-2 rounded-full border border-dashed border-muted-foreground" />
-                          {unmarked} active employee{unmarked === 1 ? "" : "s"} not marked that day
+                          {d.notMarked(unmarked)}
                         </li>
                       )}
                     </ul>
@@ -437,8 +436,8 @@ async function DashboardData() {
                 );
               })()
             ) : (
-              <EmptyNote href="/admin/attendance" cta="Open attendance">
-                Mark the first daily register to see attendance here.
+              <EmptyNote href="/admin/attendance" cta={d.openAttendance}>
+                {d.attendanceEmpty}
               </EmptyNote>
             )}
           </CardContent>
@@ -446,9 +445,9 @@ async function DashboardData() {
 
         <Card className="rounded-2xl shadow-none ring-border">
           <CardHeader>
-            <CardTitle className="text-base font-semibold">Pending review</CardTitle>
+            <CardTitle className="text-base font-semibold">{d.pendingTitle}</CardTitle>
             <CardDescription>
-              {pending.length ? `${pending.length} employee${pending.length > 1 ? "s" : ""} awaiting a decision` : "Nothing waiting"}
+              {pending.length ? d.awaiting(pending.length) : d.nothingWaiting}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -475,11 +474,11 @@ async function DashboardData() {
               </ul>
             ) : (
               <p className="rounded-xl bg-muted/60 px-4 py-6 text-center text-sm text-muted-foreground">
-                All employee records are reviewed.
+                {d.allReviewed}
               </p>
             )}
             <Button variant="outline" className="mt-4 w-full" nativeButton={false} render={<Link href="/admin/employee" />}>
-              Manage employees
+              {d.manageEmployees}
             </Button>
           </CardContent>
         </Card>
@@ -505,20 +504,21 @@ function DataSkeleton() {
   );
 }
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const d = getAdminDict(await getAdminLocale()).dash;
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Workforce and production across the Shunyi factory floor.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{d.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{d.subtitle}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" nativeButton={false} render={<Link href="/admin/employee" />}>
-            <UsersIcon /> Add employee
+            <UsersIcon /> {d.addEmployee}
           </Button>
           <Button className="bg-[var(--signal)] hover:bg-[var(--signal)]/90" nativeButton={false} render={<Link href="/admin/layout" />}>
-            <PlusIcon /> Log production
+            <PlusIcon /> {d.logProduction}
           </Button>
         </div>
       </div>

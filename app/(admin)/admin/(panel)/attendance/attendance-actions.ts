@@ -3,6 +3,7 @@
 import mongoose from "mongoose";
 import { connectDB } from "@/lib/db-connect";
 import { isLoggedIn } from "@/lib/auth";
+import { getAdminT } from "@/lib/admin-locale";
 import EmployeeModel from "../employee/employee-model";
 import AttendanceModel from "./attendance-model";
 import {
@@ -22,7 +23,7 @@ type Fail = { success: false; message: string };
 const fail = (message: string): Fail => ({ success: false, message });
 
 async function guard(): Promise<Fail | null> {
-  if (!(await isLoggedIn())) return fail("Your session has expired. Sign in again.");
+  if (!(await isLoggedIn())) return fail((await getAdminT()).att.sessionExpired);
   await connectDB();
   return null;
 }
@@ -51,21 +52,23 @@ function toRecord(r: { employee: mongoose.Types.ObjectId; date: string; status: 
 }
 
 export async function getAttendanceDay(date: string) {
+  const t = (await getAdminT()).att;
   try {
-    if (!DATE.test(date)) return { ...fail("Pick a valid date."), employees: [], records: [] };
+    if (!DATE.test(date)) return { ...fail(t.invalidDate), employees: [], records: [] };
     const denied = await guard();
     if (denied) return { ...denied, employees: [], records: [] };
     const [employees, rows] = await Promise.all([activeEmployees(), AttendanceModel.find({ date }).lean()]);
     return { success: true as const, message: "", employees, records: rows.map(toRecord) };
   } catch (error) {
     console.error("Get attendance day error:", error);
-    return { ...fail("Could not load attendance. Check the database connection."), employees: [], records: [] };
+    return { ...fail(t.loadFailed), employees: [], records: [] };
   }
 }
 
 export async function getAttendanceMonth(month: string) {
+  const t = (await getAdminT()).att;
   try {
-    if (!MONTH.test(month)) return { ...fail("Pick a valid month."), employees: [], records: [] };
+    if (!MONTH.test(month)) return { ...fail(t.invalidMonth), employees: [], records: [] };
     const denied = await guard();
     if (denied) return { ...denied, employees: [], records: [] };
     const [employees, rows] = await Promise.all([
@@ -75,53 +78,56 @@ export async function getAttendanceMonth(month: string) {
     return { success: true as const, message: "", employees, records: rows.map(toRecord) };
   } catch (error) {
     console.error("Get attendance month error:", error);
-    return { ...fail("Could not load attendance. Check the database connection."), employees: [], records: [] };
+    return { ...fail(t.loadFailed), employees: [], records: [] };
   }
 }
 
 export async function setAttendance(employeeId: string, date: string, input: AttendanceInput) {
+  const t = (await getAdminT()).att;
   try {
-    if (!mongoose.Types.ObjectId.isValid(employeeId) || !DATE.test(date)) return fail("Invalid employee or date.");
-    if (!ATTENDANCE_STATUSES.includes(input?.status)) return fail("Invalid attendance status.");
+    if (!mongoose.Types.ObjectId.isValid(employeeId) || !DATE.test(date)) return fail(t.invalidEmployeeOrDate);
+    if (!ATTENDANCE_STATUSES.includes(input?.status)) return fail(t.invalidStatus);
     const checkIn = input.checkIn ?? "";
     const checkOut = input.checkOut ?? "";
     const note = (input.note ?? "").trim();
-    if (!TIME.test(checkIn) || !TIME.test(checkOut)) return fail("Times must be in HH:MM format.");
-    if (note.length > 500) return fail("Note is too long (500 characters max).");
+    if (!TIME.test(checkIn) || !TIME.test(checkOut)) return fail(t.timeFormat);
+    if (note.length > 500) return fail(t.noteTooLong);
     const denied = await guard();
     if (denied) return denied;
 
     const exists = await EmployeeModel.exists({ _id: employeeId });
-    if (!exists) return fail("This employee no longer exists. Reload the page.");
+    if (!exists) return fail(t.employeeGone);
 
     await AttendanceModel.updateOne(
       { employee: employeeId, date },
       { $set: { status: input.status, checkIn, checkOut, note } },
       { upsert: true, runValidators: true }
     );
-    return { success: true as const, message: "Saved." };
+    return { success: true as const, message: "" };
   } catch (error) {
     console.error("Set attendance error:", error);
-    return fail("Could not save attendance. Try again.");
+    return fail(t.saveFailed);
   }
 }
 
 export async function clearAttendance(employeeId: string, date: string) {
+  const t = (await getAdminT()).att;
   try {
-    if (!mongoose.Types.ObjectId.isValid(employeeId) || !DATE.test(date)) return fail("Invalid employee or date.");
+    if (!mongoose.Types.ObjectId.isValid(employeeId) || !DATE.test(date)) return fail(t.invalidEmployeeOrDate);
     const denied = await guard();
     if (denied) return denied;
     await AttendanceModel.deleteOne({ employee: employeeId, date });
-    return { success: true as const, message: "Cleared." };
+    return { success: true as const, message: "" };
   } catch (error) {
     console.error("Clear attendance error:", error);
-    return fail("Could not clear attendance. Try again.");
+    return fail(t.clearFailed);
   }
 }
 
 export async function markAllPresent(date: string) {
+  const t = (await getAdminT()).att;
   try {
-    if (!DATE.test(date)) return fail("Pick a valid date.");
+    if (!DATE.test(date)) return fail(t.invalidDate);
     const denied = await guard();
     if (denied) return denied;
     const employees = await activeEmployees();
@@ -140,10 +146,10 @@ export async function markAllPresent(date: string) {
         }))
       );
     }
-    return { success: true as const, message: `${todo.length} marked present.` };
+    return { success: true as const, message: t.markedPresent(todo.length) };
   } catch (error) {
     console.error("Mark all present error:", error);
-    return fail("Could not mark attendance. Try again.");
+    return fail(t.markFailed);
   }
 }
 

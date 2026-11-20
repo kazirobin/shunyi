@@ -13,12 +13,17 @@ import {
 
 export type ThroughputPoint = { date: string; label: string; received: number; finished: number };
 
-const config = {
-  received: { label: "Received", color: "var(--chart-2)" },
-  finished: { label: "Finished", color: "var(--chart-1)" },
-} satisfies ChartConfig;
-
-export function ThroughputChart({ data }: { data: ThroughputPoint[] }) {
+export function ThroughputChart({
+  data,
+  labels,
+}: {
+  data: ThroughputPoint[];
+  labels: { received: string; finished: string };
+}) {
+  const config = {
+    received: { label: labels.received, color: "var(--chart-2)" },
+    finished: { label: labels.finished, color: "var(--chart-1)" },
+  } satisfies ChartConfig;
   return (
     <ChartContainer config={config} className="aspect-auto h-72 w-full">
       <AreaChart data={data} margin={{ left: 0, right: 8, top: 8 }}>

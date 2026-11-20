@@ -3,7 +3,7 @@ import "@/components/admin/admin.css";
 import type { Metadata } from "next";
 
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { interTight, plexMono } from "@/lib/fonts";
+import { interTight, notoBengali, plexMono } from "@/lib/fonts";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://shunyi.vercel.app"),
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`admin ${interTight.variable} ${plexMono.variable}`}>
+    <html lang="en" className={`admin ${interTight.variable} ${plexMono.variable} ${notoBengali.variable}`}>
       <body suppressHydrationWarning>
         <TooltipProvider>{children}</TooltipProvider>
       </body>

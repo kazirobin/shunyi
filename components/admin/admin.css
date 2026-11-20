@@ -1,6 +1,6 @@
 /* Admin theme: shadcn tokens in the Shunyi palette (navy frame, signal accent). */
 html.admin {
-  --font-sans: var(--font-inter-tight), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-inter-tight), var(--font-noto-bengali), "PingFang SC", "Microsoft YaHei", ui-sans-serif, system-ui, sans-serif;
   --radius: 0.75rem;
 
   --background: #f5f7fa;

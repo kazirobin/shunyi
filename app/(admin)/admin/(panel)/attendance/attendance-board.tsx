@@ -32,12 +32,14 @@ import {
   type AttendanceRecord,
   type AttendanceStatus,
 } from "./attendance-types";
+import { useAdminI18n } from "@/components/admin/i18n-provider";
 
-const META: Record<AttendanceStatus, { label: string; short: string; on: string; dot: string; cell: string }> = {
-  present: { label: "Present", short: "P", on: "bg-[var(--success)] text-white", dot: "bg-[var(--success)]", cell: "bg-[var(--success)]/15 text-[var(--success)]" },
-  late: { label: "Late", short: "L", on: "bg-[var(--warning)] text-white", dot: "bg-[var(--warning)]", cell: "bg-[var(--warning)]/15 text-[var(--warning)]" },
-  absent: { label: "Absent", short: "A", on: "bg-destructive text-white", dot: "bg-destructive", cell: "bg-destructive/12 text-destructive" },
-  leave: { label: "Leave", short: "Lv", on: "bg-[var(--chart-3)] text-white", dot: "bg-[var(--chart-3)]", cell: "bg-[var(--chart-3)]/15 text-[var(--chart-2)]" },
+const SHORT = { present: "shortPresent", late: "shortLate", absent: "shortAbsent", leave: "shortLeave" } as const;
+const META: Record<AttendanceStatus, { on: string; dot: string; cell: string }> = {
+  present: { on: "bg-[var(--success)] text-white", dot: "bg-[var(--success)]", cell: "bg-[var(--success)]/15 text-[var(--success)]" },
+  late: { on: "bg-[var(--warning)] text-white", dot: "bg-[var(--warning)]", cell: "bg-[var(--warning)]/15 text-[var(--warning)]" },
+  absent: { on: "bg-destructive text-white", dot: "bg-destructive", cell: "bg-destructive/12 text-destructive" },
+  leave: { on: "bg-[var(--chart-3)] text-white", dot: "bg-[var(--chart-3)]", cell: "bg-[var(--chart-3)]/15 text-[var(--chart-2)]" },
 };
 
 const pad = (n: number) => String(n).padStart(2, "0");
@@ -47,10 +49,8 @@ const shiftDay = (date: string, by: number) => {
   d.setDate(d.getDate() + by);
   return ymd(d);
 };
-const longDate = (date: string) =>
-  new Date(`${date}T00:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" });
-const monthLabel = (month: string) =>
-  new Date(`${month}-01T00:00:00`).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+const LONG_DATE: Intl.DateTimeFormatOptions = { weekday: "long", month: "long", day: "numeric", year: "numeric" };
+const MONTH_LABEL: Intl.DateTimeFormatOptions = { month: "long", year: "numeric" };
 const initials = (name: string) =>
   name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]?.toUpperCase()).join("");
 
@@ -73,8 +73,9 @@ function StatusPicker({
   disabled?: boolean;
   onPick: (s: AttendanceStatus) => void;
 }) {
+  const { t } = useAdminI18n();
   return (
-    <div role="radiogroup" aria-label="Attendance status" className="inline-flex rounded-full bg-muted p-1">
+    <div role="radiogroup" aria-label={t.att.statusGroup} className="inline-flex rounded-full bg-muted p-1">
       {ATTENDANCE_STATUSES.map((s) => {
         const on = value === s;
         return (
@@ -89,7 +90,7 @@ function StatusPicker({
               on ? META[s].on : "text-muted-foreground hover:bg-card hover:text-foreground"
             }`}
           >
-            {META[s].label}
+            {t.att[s]}
           </button>
         );
       })}
@@ -114,6 +115,7 @@ function DayRow({
   const [checkOut, setCheckOut] = useState(record?.checkOut ?? "");
   const [note, setNote] = useState(record?.note ?? "");
   const [saving, startSaving] = useTransition();
+  const { t } = useAdminI18n();
 
   function save(next: Partial<AttendanceRecord> & { status: AttendanceStatus }) {
     const merged: AttendanceRecord = {
@@ -170,10 +172,10 @@ function DayRow({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="truncate font-medium">{employee.name}</span>
-            {saving && <span className="size-1.5 animate-pulse rounded-full bg-[var(--signal)]" aria-label="Saving" />}
+            {saving && <span className="size-1.5 animate-pulse rounded-full bg-[var(--signal)]" aria-label={t.att.saving} />}
           </div>
           <div className="tnum text-xs text-muted-foreground">
-            #{employee.serial} · Grade {employee.grade.toUpperCase()}
+            #{employee.serial} · {t.grade(employee.grade)}
           </div>
         </div>
       </div>
@@ -187,7 +189,7 @@ function DayRow({
           disabled={!record}
           onChange={(e) => setCheckIn(e.target.value)}
           onBlur={commit}
-          aria-label={`Check-in time for ${employee.name}`}
+          aria-label={t.att.checkInFor(employee.name)}
           className="h-8 tnum"
         />
         <Input
@@ -196,18 +198,18 @@ function DayRow({
           disabled={!record}
           onChange={(e) => setCheckOut(e.target.value)}
           onBlur={commit}
-          aria-label={`Check-out time for ${employee.name}`}
+          aria-label={t.att.checkOutFor(employee.name)}
           className="h-8 tnum"
         />
         <Input
           value={note}
           disabled={!record}
           maxLength={500}
-          placeholder={record ? "Note" : "Set a status first"}
+          placeholder={record ? t.att.note : t.att.setStatusFirst}
           onChange={(e) => setNote(e.target.value)}
           onBlur={commit}
           onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-          aria-label={`Note for ${employee.name}`}
+          aria-label={t.att.noteFor(employee.name)}
           className="h-8"
         />
       </div>
@@ -223,6 +225,7 @@ function DailyRegister({ today }: { today: string }) {
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState("");
   const [bulk, startBulk] = useTransition();
+  const { t, date: fmtDate } = useAdminI18n();
 
   useEffect(() => {
     let live = true;
@@ -250,7 +253,7 @@ function DailyRegister({ today }: { today: string }) {
   }
 
   function markRest() {
-    if (!confirm(`Mark ${unmarked} unmarked employee${unmarked === 1 ? "" : "s"} as present for ${longDate(date)}?`)) return;
+    if (!confirm(t.att.confirmMarkRest(unmarked, fmtDate(date, LONG_DATE)))) return;
     startBulk(async () => {
       const res = await markAllPresent(date);
       setMessage(res.message);
@@ -263,7 +266,7 @@ function DailyRegister({ today }: { today: string }) {
       <Card className="rounded-2xl shadow-none ring-border">
         <CardContent className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1">
-            <Button size="icon-sm" variant="outline" onClick={() => setPicked(shiftDay(date, -1))} aria-label="Previous day">
+            <Button size="icon-sm" variant="outline" onClick={() => setPicked(shiftDay(date, -1))} aria-label={t.att.prevDay}>
               <ChevronLeftIcon />
             </Button>
             <Input
@@ -272,34 +275,34 @@ function DailyRegister({ today }: { today: string }) {
               max={today}
               onChange={(e) => e.target.value && setPicked(e.target.value)}
               className="h-8 w-40 tnum"
-              aria-label="Attendance date"
+              aria-label={t.att.dateLabel}
             />
             <Button
               size="icon-sm"
               variant="outline"
               disabled={date >= today}
               onClick={() => setPicked(shiftDay(date, 1))}
-              aria-label="Next day"
+              aria-label={t.att.nextDay}
             >
               <ChevronRightIcon />
             </Button>
             {date !== today && (
               <Button size="sm" variant="ghost" onClick={() => setPicked(null)}>
-                Today
+                {t.att.today}
               </Button>
             )}
           </div>
-          <div className="font-medium">{longDate(date)}</div>
+          <div className="font-medium">{fmtDate(date, LONG_DATE)}</div>
           <div className="ml-auto flex flex-wrap items-center gap-2">
             {counts.map(({ s, n }) => (
               <span key={s} className="inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-xs">
                 <span className={`size-2 rounded-full ${META[s].dot}`} />
-                {META[s].label}
+                {t.att[s]}
                 <span className="tnum font-semibold">{loading ? "–" : n}</span>
               </span>
             ))}
             <span className="inline-flex items-center gap-1.5 rounded-full border border-dashed px-2.5 py-1 text-xs text-muted-foreground">
-              Unmarked <span className="tnum font-semibold text-foreground">{loading ? "–" : unmarked}</span>
+              {t.att.unmarked} <span className="tnum font-semibold text-foreground">{loading ? "–" : unmarked}</span>
             </span>
           </div>
         </CardContent>
@@ -307,9 +310,9 @@ function DailyRegister({ today }: { today: string }) {
 
       <Card className="gap-0 rounded-2xl pb-0 shadow-none ring-border">
         <CardHeader className="pb-3">
-          <CardTitle className="font-semibold">Daily register</CardTitle>
+          <CardTitle className="font-semibold">{t.att.registerTitle}</CardTitle>
           <CardDescription>
-            Tap a status to mark it, tap it again to clear. Times and notes save when you leave the field.
+            {t.att.registerDesc}
           </CardDescription>
         </CardHeader>
         <div className="flex flex-wrap items-center gap-2 px-(--card-spacing) pb-4">
@@ -318,23 +321,23 @@ function DailyRegister({ today }: { today: string }) {
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search name or phone"
+                placeholder={t.att.searchPh}
                 className="h-8 w-full pl-9 sm:w-56"
-                aria-label="Search employees"
+                aria-label={t.att.searchLabel}
               />
             </div>
             <Button size="sm" disabled={loading || unmarked === 0 || bulk} onClick={markRest}>
-              <CheckCheckIcon /> Mark rest present
+              <CheckCheckIcon /> {t.att.markRest}
             </Button>
         </div>
 
         <div className="hidden grid-cols-[minmax(180px,1.2fr)_auto_minmax(250px,1fr)] gap-4 border-y bg-muted/50 px-5 py-2 text-xs font-medium text-muted-foreground md:grid">
-          <span>Employee</span>
-          <span className="w-[262px]">Status</span>
+          <span>{t.att.employee}</span>
+          <span className="w-[262px]">{t.att.status}</span>
           <span className="grid grid-cols-[1fr_1fr_1.4fr] gap-2">
-            <span>Check in</span>
-            <span>Check out</span>
-            <span>Note</span>
+            <span>{t.att.checkIn}</span>
+            <span>{t.att.checkOut}</span>
+            <span>{t.att.note}</span>
           </span>
         </div>
 
@@ -353,8 +356,8 @@ function DailyRegister({ today }: { today: string }) {
         ) : employees.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-14 text-center">
             <UsersIcon className="size-7 text-muted-foreground" />
-            <p className="font-medium">No active employees</p>
-            <p className="text-sm text-muted-foreground">Only employees with status Active appear in the register.</p>
+            <p className="font-medium">{t.att.noActive}</p>
+            <p className="text-sm text-muted-foreground">{t.att.noActiveDesc}</p>
           </div>
         ) : (
           <ul className="divide-y">
@@ -368,7 +371,7 @@ function DailyRegister({ today }: { today: string }) {
                 onError={setMessage}
               />
             ))}
-            {visible.length === 0 && <li className="py-10 text-center text-sm text-muted-foreground">No employee matches “{search}”.</li>}
+            {visible.length === 0 && <li className="py-10 text-center text-sm text-muted-foreground">{t.att.noMatch(search)}</li>}
           </ul>
         )}
       </Card>
@@ -382,6 +385,7 @@ function MonthlyReport({ today }: { today: string }) {
   const [picked, setPicked] = useState<string | null>(null);
   const month = picked ?? today.slice(0, 7);
   const [data, setData] = useState<MonthData | null>(null);
+  const { t, date: fmtDate } = useAdminI18n();
 
   useEffect(() => {
     let live = true;
@@ -405,31 +409,32 @@ function MonthlyReport({ today }: { today: string }) {
   }, [data]);
 
   const rows = (data?.employees ?? []).map((e) => {
-    const t = { present: 0, late: 0, absent: 0, leave: 0 } as Record<AttendanceStatus, number>;
+    const tot = { present: 0, late: 0, absent: 0, leave: 0 } as Record<AttendanceStatus, number>;
     dayList.forEach((d) => {
       const r = grid.get(`${e._id}|${d}`);
-      if (r) t[r.status] += 1;
+      if (r) tot[r.status] += 1;
     });
-    const marked = t.present + t.late + t.absent + t.leave;
-    const rate = marked ? Math.round(((t.present + t.late) / marked) * 100) : null;
-    return { e, t, marked, rate };
+    const marked = tot.present + tot.late + tot.absent + tot.leave;
+    const rate = marked ? Math.round(((tot.present + tot.late) / marked) * 100) : null;
+    return { e, tot, marked, rate };
   });
 
   function exportCsv() {
     const esc = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
-    const head = ["Serial", "Name", "Phone", ...dayList.map((d) => d.slice(8)), "Present", "Late", "Absent", "Leave", "Attendance %"];
-    const lines = rows.map(({ e, t, rate }) => [
+    const [hSerial, hName, hPhone, ...hTotals] = t.att.csvHead;
+    const head = [hSerial, hName, hPhone, ...dayList.map((d) => d.slice(8)), ...hTotals];
+    const lines = rows.map(({ e, tot, rate }) => [
       e.serial,
       e.name,
       e.number,
       ...dayList.map((d) => {
         const r = grid.get(`${e._id}|${d}`);
-        return r ? META[r.status].short : "";
+        return r ? t.att[SHORT[r.status]] : "";
       }),
-      t.present,
-      t.late,
-      t.absent,
-      t.leave,
+      tot.present,
+      tot.late,
+      tot.absent,
+      tot.leave,
       rate ?? "",
     ]);
     const csv = [head, ...lines].map((row) => row.map(esc).join(",")).join("\n");
@@ -444,8 +449,8 @@ function MonthlyReport({ today }: { today: string }) {
   return (
     <Card className="gap-0 rounded-2xl pb-0 shadow-none ring-border">
       <CardHeader className="pb-3">
-        <CardTitle className="font-semibold">Monthly report</CardTitle>
-        <CardDescription>{monthLabel(month)} · present and late count as attended</CardDescription>
+        <CardTitle className="font-semibold">{t.att.monthTitle}</CardTitle>
+        <CardDescription>{t.att.monthDesc(fmtDate(`${month}-01`, MONTH_LABEL))}</CardDescription>
       </CardHeader>
       <div className="flex flex-wrap items-center gap-2 px-(--card-spacing) pb-4">
           <Input
@@ -454,10 +459,10 @@ function MonthlyReport({ today }: { today: string }) {
             max={today.slice(0, 7)}
             onChange={(e) => e.target.value && setPicked(e.target.value)}
             className="h-8 w-40 tnum"
-            aria-label="Report month"
+            aria-label={t.att.monthLabel}
           />
           <Button size="sm" variant="outline" disabled={loading || rows.length === 0} onClick={exportCsv}>
-            <DownloadIcon /> Export CSV
+            <DownloadIcon /> {t.att.exportCsv}
           </Button>
       </div>
 
@@ -465,9 +470,9 @@ function MonthlyReport({ today }: { today: string }) {
         {ATTENDANCE_STATUSES.map((s) => (
           <span key={s} className="inline-flex items-center gap-1.5">
             <span className={`inline-flex size-5 items-center justify-center rounded text-[10px] font-semibold ${META[s].cell}`}>
-              {META[s].short}
+              {t.att[SHORT[s]]}
             </span>
-            {META[s].label}
+            {t.att[s]}
           </span>
         ))}
       </div>
@@ -479,7 +484,7 @@ function MonthlyReport({ today }: { today: string }) {
       ) : !data.ok ? (
         <p className="border-t px-5 py-6 text-sm text-destructive">{data.message}</p>
       ) : rows.length === 0 ? (
-        <p className="border-t px-5 py-10 text-center text-sm text-muted-foreground">No active employees to report on.</p>
+        <p className="border-t px-5 py-10 text-center text-sm text-muted-foreground">{t.att.noActiveReport}</p>
       ) : (
         <div className="overflow-x-auto border-t">
           <table className="w-full border-separate border-spacing-0 text-xs">
@@ -491,16 +496,16 @@ function MonthlyReport({ today }: { today: string }) {
                     {Number(d.slice(8))}
                   </th>
                 ))}
-                {(["P", "L", "A", "Lv"] as const).map((h) => (
+                {ATTENDANCE_STATUSES.map((st) => t.att[SHORT[st]]).map((h) => (
                   <th key={h} className="min-w-8 border-b border-l bg-muted/40 px-1 py-2 text-center font-medium">
                     {h}
                   </th>
                 ))}
-                <th className="min-w-14 border-b bg-muted/40 px-3 py-2 text-right font-medium">Rate</th>
+                <th className="min-w-14 border-b bg-muted/40 px-3 py-2 text-right font-medium">{t.att.rate}</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ e, t, rate }) => (
+              {rows.map(({ e, tot, rate }) => (
                 <tr key={e._id} className="group">
                   <td className="sticky left-0 z-10 border-b bg-card px-4 py-1.5 group-hover:bg-muted">
                     <div className="truncate text-sm font-medium">{e.name}</div>
@@ -512,10 +517,10 @@ function MonthlyReport({ today }: { today: string }) {
                       <td key={d} className="border-b px-0 py-1.5 text-center group-hover:bg-muted/50">
                         {r ? (
                           <span
-                            title={`${META[r.status].label}${r.checkIn ? ` · in ${r.checkIn}` : ""}${r.checkOut ? ` · out ${r.checkOut}` : ""}${r.note ? ` · ${r.note}` : ""}`}
+                            title={`${t.att[r.status]}${r.checkIn ? ` · ${t.att.in} ${r.checkIn}` : ""}${r.checkOut ? ` · ${t.att.out} ${r.checkOut}` : ""}${r.note ? ` · ${r.note}` : ""}`}
                             className={`inline-flex size-5 items-center justify-center rounded text-[9px] font-semibold ${META[r.status].cell}`}
                           >
-                            {META[r.status].short}
+                            {t.att[SHORT[r.status]]}
                           </span>
                         ) : (
                           <span className="inline-block size-1 rounded-full bg-border" />
@@ -525,7 +530,7 @@ function MonthlyReport({ today }: { today: string }) {
                   })}
                   {ATTENDANCE_STATUSES.map((s) => (
                     <td key={s} className="tnum border-b border-l bg-muted/20 px-1 text-center font-medium">
-                      {t[s]}
+                      {tot[s]}
                     </td>
                   ))}
                   <td className="tnum border-b bg-muted/20 px-3 text-right">
@@ -549,13 +554,14 @@ function MonthlyReport({ today }: { today: string }) {
 
 export function AttendanceBoard() {
   const today = useToday();
+  const { t } = useAdminI18n();
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Attendance</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Mark daily attendance for active employees and review the month.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">{t.att.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{t.att.subtitle}</p>
         </div>
         <CalendarCheckIcon className="hidden size-5 text-muted-foreground sm:block" />
       </div>
@@ -564,8 +570,8 @@ export function AttendanceBoard() {
       ) : (
         <Tabs defaultValue="day">
           <TabsList className="bg-card ring-1 ring-border">
-            <TabsTrigger value="day">Daily register</TabsTrigger>
-            <TabsTrigger value="month">Monthly report</TabsTrigger>
+            <TabsTrigger value="day">{t.att.dayTab}</TabsTrigger>
+            <TabsTrigger value="month">{t.att.monthTab}</TabsTrigger>
           </TabsList>
           <TabsContent value="day">
             <DailyRegister today={today} />

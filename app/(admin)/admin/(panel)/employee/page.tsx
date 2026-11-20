@@ -31,6 +31,7 @@ import {
 import type { Employee } from "./employee-types";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDownIcon } from "lucide-react";
+import { useAdminI18n } from "@/components/admin/i18n-provider";
 
 type PreviewImageState = {
   url: string;
@@ -52,6 +53,8 @@ function buildWhatsAppUrl(rawNumber: string): string | null {
 }
 
 export default function EmployeePage() {
+  const { t: dict } = useAdminI18n();
+  const t = dict.emp;
   const [employees, setEmployees] = useState<Employee[]>([]);
 
   const [name, setName] = useState("");
@@ -133,13 +136,13 @@ export default function EmployeePage() {
       }
 
       setCopiedId(id);
-      setMessage(`Copied ${phoneNumber}`);
+      setMessage(t.copiedN(phoneNumber));
       setTimeout(() => {
         setCopiedId((current) => (current === id ? null : current));
       }, 2000);
     } catch (error) {
       console.error("Copy number error:", error);
-      setMessage("Could not copy number.");
+      setMessage(t.copyFailed);
     }
   }
 
@@ -175,14 +178,14 @@ export default function EmployeePage() {
       const result = editingId
         ? await updateEmployee(editingId, input)
         : await addEmployee(input);
-      setMessage(result.message);
+      setMessage(result.success ? (editingId ? t.updated : t.added) : result.message);
       if (result.success) {
         resetForm();
         await loadEmployees();
       }
     } catch (error) {
       console.error("Save employee error:", error);
-      setMessage("Could not save employee. Please try again.");
+      setMessage(t.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -208,7 +211,7 @@ export default function EmployeePage() {
   async function handleDelete(id: string) {
     if (saving || repairing || reordering) return;
     const confirmed = window.confirm(
-      "Are you sure you want to delete this employee?"
+      t.confirmDelete
     );
 
     if (!confirmed) return;
@@ -216,14 +219,14 @@ export default function EmployeePage() {
     setSaving(true);
     try {
       const result = await deleteEmployee(id);
-      setMessage(result.message);
+      setMessage(result.success ? t.deleted : result.message);
       if (result.success) {
         if (editingId === id) resetForm();
         await loadEmployees();
       }
     } catch (error) {
       console.error("Delete employee error:", error);
-      setMessage("Could not delete employee. Please try again.");
+      setMessage(t.deleteFailed);
     } finally {
       setSaving(false);
     }
@@ -232,7 +235,7 @@ export default function EmployeePage() {
   async function handleRepairOldIds() {
     if (repairing || saving || reordering) return;
     const confirmed = window.confirm(
-      "Rebuild all employee serial numbers from 1 to the total count? This will remove duplicate and missing serials."
+      t.confirmRepair
     );
 
     if (!confirmed) return;
@@ -242,11 +245,11 @@ export default function EmployeePage() {
 
     try {
       const result = await repairOldEmployeeSerials();
-      setMessage(result.message);
+      setMessage(result.success ? t.serialsRepaired : result.message);
       if (result.success) await loadEmployees();
     } catch (error) {
       console.error("Repair serials error:", error);
-      setMessage("Could not repair serials. Please try again.");
+      setMessage(t.repairFailed);
     } finally {
       setRepairing(false);
     }
@@ -256,7 +259,7 @@ export default function EmployeePage() {
     if (!draggedId || draggedId === targetId || reordering || saving || repairing) return;
 
     if (search.trim()) {
-      setMessage("Clear search before changing employee order.");
+      setMessage(t.clearSearch);
       setDraggedId(null);
       return;
     }
@@ -289,16 +292,16 @@ export default function EmployeePage() {
     setEmployees(reordered);
     setDraggedId(null);
     setReordering(true);
-    setMessage("Saving new order...");
+    setMessage(t.savingOrder);
 
     try {
       const result = await reorderEmployees(reordered.map((employee) => employee._id));
-      if (result.success) setMessage(result.message);
+      if (result.success) setMessage(t.orderSaved);
       else { setEmployees(oldEmployees); setMessage(result.message); }
     } catch (error) {
       console.error("Reorder employees error:", error);
       setEmployees(oldEmployees);
-      setMessage("Could not save the new order. Please try again.");
+      setMessage(t.orderFailed);
     } finally {
       setReordering(false);
     }
@@ -313,9 +316,9 @@ export default function EmployeePage() {
   return (
     <div className="mx-auto max-w-7xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Employees</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t.title}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Add, edit and reorder staff records, contacts, grades and status.
+          {t.subtitle}
         </p>
       </div>
 
@@ -334,9 +337,9 @@ export default function EmployeePage() {
               {editingId ? <Pencil size={16} /> : <Plus size={16} />}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block font-semibold">{editingId ? `Edit ${name || "employee"}` : "Add new employee"}</span>
+              <span className="block font-semibold">{editingId ? t.edit(name) : t.addNew}</span>
               <span className="block text-xs text-muted-foreground">
-                {editingId ? "Update the record, then save" : "Name, phone, photo, status and grade"}
+                {editingId ? t.editHint : t.addHint}
               </span>
             </span>
             <ChevronDownIcon className="size-4 text-muted-foreground transition-transform duration-200 group-data-[panel-open]/form:rotate-180" />
@@ -349,7 +352,7 @@ export default function EmployeePage() {
               className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
             >
               <X size={17} />
-              Cancel
+              {t.cancel}
             </button>
           )}
         </div>
@@ -360,7 +363,7 @@ export default function EmployeePage() {
           {editingId && (
             <div className="max-w-xs space-y-2">
               <label className="text-sm font-medium">
-                Serial Number *
+                {t.serial}
               </label>
 
               <input
@@ -375,7 +378,7 @@ export default function EmployeePage() {
               />
 
               <p className="text-xs text-muted-foreground">
-                Enter a position number and click Update Employee.
+                {t.serialHint}
               </p>
             </div>
           )}
@@ -384,13 +387,13 @@ export default function EmployeePage() {
           <div className="grid gap-5 md:grid-cols-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                Employee Name *
+                {t.name}
               </label>
 
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Enter employee name"
+                placeholder={t.namePh}
                 required
                 className="h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:border-primary"
               />
@@ -398,14 +401,14 @@ export default function EmployeePage() {
 
             <div className="space-y-2">
               <label className="text-sm font-medium">
-                Phone Number *
+                {t.phone}
               </label>
 
               <input
                 type="tel"
                 value={number}
                 onChange={(e) => setNumber(e.target.value)}
-                placeholder="Enter phone number"
+                placeholder={t.phonePh}
                 required
                 maxLength={120}
                 className="h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:border-primary"
@@ -417,7 +420,7 @@ export default function EmployeePage() {
           <div className="space-y-2">
             <label className="flex items-center gap-2 text-sm font-medium">
               <ImagePlus size={17} />
-              Employee Photo URL
+              {t.photoUrl}
             </label>
 
             <input
@@ -425,24 +428,23 @@ export default function EmployeePage() {
               maxLength={2048}
               value={photoUrl}
               onChange={(e) => setPhotoUrl(e.target.value)}
-              placeholder="Paste ImgBB image URL here"
+              placeholder={t.photoPh}
               className="h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:border-primary"
             />
 
             <p className="text-xs text-muted-foreground">
-              Upload your photo to ImgBB, copy the direct image URL,
-              and paste it here.
+              {t.photoHint}
             </p>
 
             {photoUrl && (
               <div className="pt-2">
                 <img
                   src={photoUrl}
-                  alt="Employee preview"
+                  alt={t.previewAlt}
                   onClick={() =>
                     setPreviewImage({
                       url: photoUrl,
-                      name: name.trim() || "Employee Preview",
+                      name: name.trim() || t.previewName,
                     })
                   }
                   className="h-24 w-24 cursor-pointer rounded-xl border object-cover transition-opacity hover:opacity-85"
@@ -460,21 +462,21 @@ export default function EmployeePage() {
           {/* Status and Grade */}
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2">
-              <label htmlFor="employee-status" className="text-sm font-medium">Status</label>
+              <label htmlFor="employee-status" className="text-sm font-medium">{t.status}</label>
               <select
                 id="employee-status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as Employee["status"])}
                 className="h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:border-primary"
               >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="pending">Pending</option>
-                <option value="rejected">Rejected</option>
+                <option value="active">{dict.status.active}</option>
+                <option value="inactive">{dict.status.inactive}</option>
+                <option value="pending">{dict.status.pending}</option>
+                <option value="rejected">{dict.status.rejected}</option>
               </select>
             </div>
             <div className="space-y-2">
-              <label htmlFor="employee-grade" className="text-sm font-medium">Grade</label>
+              <label htmlFor="employee-grade" className="text-sm font-medium">{t.grade}</label>
               <select
                 id="employee-grade"
                 value={grade}
@@ -492,12 +494,12 @@ export default function EmployeePage() {
 
           {/* Notes */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Notes</label>
+            <label className="text-sm font-medium">{t.notes}</label>
 
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="Write employee notes..."
+              placeholder={t.notesPh}
               rows={3}
               maxLength={2000}
               className="w-full rounded-lg border bg-background p-3 text-sm outline-none focus:border-primary"
@@ -512,10 +514,10 @@ export default function EmployeePage() {
             {editingId ? <Save size={18} /> : <Plus size={18} />}
 
             {saving
-              ? "Saving..."
+              ? t.saving
               : editingId
-                ? "Update Employee"
-                : "Add Employee"}
+                ? t.update
+                : t.add}
           </button>
         </form>
         </CollapsibleContent>
@@ -532,11 +534,11 @@ export default function EmployeePage() {
         <div className="flex flex-wrap items-center justify-between gap-4 border-b p-6">
           <div>
             <h2 className="text-lg font-semibold">
-              Employee List
+              {t.list}
             </h2>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              Total Employees: {employees.length}
+              {t.total(employees.length)}
             </p>
           </div>
 
@@ -548,7 +550,7 @@ export default function EmployeePage() {
               className="flex h-10 items-center gap-2 rounded-lg border px-3 text-sm font-medium hover:bg-muted disabled:opacity-50"
             >
               <Wrench size={16} />
-              {repairing ? "Repairing..." : "Fix All Serials"}
+              {repairing ? t.repairing : t.fixSerials}
             </button>
 
             <div className="flex h-10 w-full items-center gap-2 rounded-lg border px-3 sm:w-64">
@@ -560,7 +562,7 @@ export default function EmployeePage() {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search employee..."
+                placeholder={t.searchPh}
                 className="w-full bg-transparent text-sm outline-none"
               />
             </div>
@@ -569,7 +571,7 @@ export default function EmployeePage() {
 
         {loading ? (
           <div className="p-10 text-center text-muted-foreground">
-            Loading employees...
+            {t.loading}
           </div>
         ) : filteredEmployees.length > 0 ? (
           <div className="grid grid-cols-1 gap-5 p-4 sm:grid-cols-2 sm:p-6 lg:grid-cols-3 xl:grid-cols-4">
@@ -604,7 +606,7 @@ export default function EmployeePage() {
                         type="button"
                         disabled={saving || repairing || reordering}
                         onClick={() => handleEdit(employee)}
-                        aria-label="Edit employee"
+                        aria-label={t.editAria}
                         className="rounded-lg border bg-card p-1.5 text-blue-500 transition-colors hover:bg-blue-500/10 disabled:opacity-50"
                       >
                         <Pencil size={15} />
@@ -614,7 +616,7 @@ export default function EmployeePage() {
                         type="button"
                         disabled={saving || repairing || reordering}
                         onClick={() => handleDelete(employee._id)}
-                        aria-label="Delete employee"
+                        aria-label={t.deleteAria}
                         className="rounded-lg border bg-card p-1.5 text-red-500 transition-colors hover:bg-red-500/10 disabled:opacity-50"
                       >
                         <Trash2 size={15} />
@@ -646,7 +648,7 @@ export default function EmployeePage() {
                             name: employee.name,
                           })
                         }
-                        aria-label={`View ${employee.name}'s photo full screen`}
+                        aria-label={t.viewPhoto(employee.name)}
                         className="block w-full cursor-zoom-in text-left focus:outline-none"
                       >
                         <img
@@ -656,7 +658,7 @@ export default function EmployeePage() {
                         />
                         <span className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-md bg-black/70 px-2 py-1 text-[11px] font-medium text-white opacity-90 transition-opacity group-hover:opacity-100">
                           <Maximize2 size={12} />
-                          Full view
+                          {t.fullView}
                         </span>
                       </button>
                     ) : (
@@ -678,10 +680,10 @@ export default function EmployeePage() {
                       employee.status === "pending" ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" :
                       "bg-red-500/10 text-red-600 dark:text-red-400"
                     }`}>
-                      {employee.status}
+                      {dict.status[employee.status] ?? employee.status}
                     </span>
                     <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase text-primary">
-                      Grade {employee.grade}
+                      {dict.grade(employee.grade)}
                     </span>
                   </div>
 
@@ -690,7 +692,7 @@ export default function EmployeePage() {
                     <button
                       type="button"
                       onClick={() => handleCopyNumber(employee._id, employee.number)}
-                      title="Click to copy phone number"
+                      title={t.copyTitle}
                       className="flex min-w-0 items-center gap-1.5 rounded-lg bg-blue-500/10 px-2.5 py-1 text-left text-sm font-medium text-blue-600 transition-colors hover:bg-blue-500/20 dark:text-blue-400"
                     >
                       <Phone size={14} className="shrink-0 text-blue-600 dark:text-blue-400" />
@@ -698,7 +700,7 @@ export default function EmployeePage() {
                       {isCopied ? (
                         <span className="ml-1 inline-flex shrink-0 items-center gap-0.5 rounded bg-blue-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">
                           <Check size={10} />
-                          Copied
+                          {t.copied}
                         </span>
                       ) : null}
                     </button>
@@ -709,15 +711,15 @@ export default function EmployeePage() {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        aria-label={`Chat with ${employee.name} on WhatsApp`}
-                        title="Open in WhatsApp"
+                        aria-label={t.whatsappAria(employee.name)}
+                        title={t.whatsappTitle}
                         className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 transition-colors hover:bg-emerald-500/25 dark:text-emerald-400"
                       >
                         <MessageCircle size={16} />
                       </a>
                     ) : (
                       <span
-                        title="Invalid or missing phone number for WhatsApp"
+                        title={t.whatsappInvalid}
                         className="inline-flex h-8 w-8 shrink-0 cursor-not-allowed items-center justify-center rounded-lg bg-muted text-muted-foreground/40"
                       >
                         <MessageCircle size={16} />
@@ -734,7 +736,7 @@ export default function EmployeePage() {
                           !isExpanded && isLongNote ? "line-clamp-3" : ""
                         }`}
                       >
-                        {trimmedNote || "No notes added."}
+                        {trimmedNote || t.noNotes}
                       </p>
 
                       {isLongNote && (
@@ -743,7 +745,7 @@ export default function EmployeePage() {
                           onClick={() => toggleNoteExpand(employee._id)}
                           className="mt-1.5 font-semibold text-blue-600 hover:underline dark:text-blue-400"
                         >
-                          {isExpanded ? "Show less" : "Show more"}
+                          {isExpanded ? t.showLess : t.showMore}
                         </button>
                       )}
                     </div>
@@ -760,11 +762,11 @@ export default function EmployeePage() {
             />
 
             <h3 className="font-semibold">
-              No Employees Found
+              {t.noneFound}
             </h3>
 
             <p className="mt-1 text-sm text-muted-foreground">
-              Add your first employee to get started.
+              {t.noneFoundDesc}
             </p>
           </div>
         )}
@@ -775,7 +777,7 @@ export default function EmployeePage() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={`${previewImage.name} photo preview`}
+          aria-label={t.photoPreview(previewImage.name)}
           onClick={() => setPreviewImage(null)}
           className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 p-4 backdrop-blur-xs"
         >
@@ -791,11 +793,11 @@ export default function EmployeePage() {
               <button
                 type="button"
                 onClick={() => setPreviewImage(null)}
-                aria-label="Close full screen image"
+                aria-label={t.closePreview}
                 className="flex items-center gap-1.5 rounded-lg bg-white/15 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-white/25"
               >
                 <X size={18} />
-                <span>Close</span>
+                <span>{t.close}</span>
               </button>
             </div>
 
