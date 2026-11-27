@@ -38,6 +38,21 @@ export async function addInput(productId: string, data: IInputEntry) {
   revalidatePath("/products");
 }
 
+export async function updateInput(
+  productId: string,
+  inputId: string,
+  data: Partial<IInputEntry>
+) {
+  await connectDB();
+  const product = await Product.findById(productId);
+  if (!product) throw new Error("Product not found");
+  const entry = product.inputs.id(inputId);
+  if (!entry) throw new Error("Input entry not found");
+  Object.assign(entry, data);
+  await product.save();
+  revalidatePath("/products");
+}
+
 export async function deleteInput(productId: string, inputId: string) {
   await connectDB();
   await Product.findByIdAndUpdate(productId, { $pull: { inputs: { _id: inputId } } });
@@ -48,6 +63,21 @@ export async function deleteInput(productId: string, inputId: string) {
 export async function addOutput(productId: string, data: IOutputEntry) {
   await connectDB();
   await Product.findByIdAndUpdate(productId, { $push: { outputs: data } });
+  revalidatePath("/products");
+}
+
+export async function updateOutput(
+  productId: string,
+  outputId: string,
+  data: Partial<IOutputEntry>
+) {
+  await connectDB();
+  const product = await Product.findById(productId);
+  if (!product) throw new Error("Product not found");
+  const entry = product.outputs.id(outputId);
+  if (!entry) throw new Error("Output entry not found");
+  Object.assign(entry, data);
+  await product.save();
   revalidatePath("/products");
 }
 

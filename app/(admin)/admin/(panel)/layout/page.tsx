@@ -7,15 +7,17 @@ import {
   updateProduct,
   deleteProduct,
   addInput,
+  updateInput,
   deleteInput,
   addOutput,
+  updateOutput,
   deleteOutput,
   addProcess,
   updateProcess,
   deleteProcess,
   reorderProcesses,
 } from "./actions";
-import { IProduct, IProcess } from "./types";
+import { IProduct, IProcess, IInputEntry, IOutputEntry } from "./types";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -40,6 +42,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAdminI18n } from "@/components/admin/i18n-provider";
 
 
+
+function withRunningTotal<T extends { pieces: number }>(items: T[]) {
+  let running = 0;
+  return items.map((item) => {
+    running += Number(item.pieces) || 0;
+    return { item, total: running };
+  });
+}
 
 export default function ProductionPage() {
   const [products, setProducts] = useState<IProduct[]>([]);
@@ -70,6 +80,19 @@ export default function ProductionPage() {
   const [pDesc, setPDesc] = useState("");
   const [pLabel, setPLabel] = useState("");
   const [editing, setEditing] = useState<IProcess | null>(null);
+
+  // INPUT edit states
+  const [editingInput, setEditingInput] = useState<IInputEntry | null>(null);
+  const [editInDate, setEditInDate] = useState("");
+  const [editInWork, setEditInWork] = useState("");
+  const [editInPieces, setEditInPieces] = useState(0);
+  const [editInNote, setEditInNote] = useState("");
+
+  // OUTPUT edit states
+  const [editingOutput, setEditingOutput] = useState<IOutputEntry | null>(null);
+  const [editOutDate, setEditOutDate] = useState("");
+  const [editOutPieces, setEditOutPieces] = useState(0);
+  const [editOutNote, setEditOutNote] = useState("");
 
   // ---------- Initial Load ----------
   useEffect(() => {
@@ -157,6 +180,36 @@ export default function ProductionPage() {
     });
   };
 
+  const handleEditInput = (entry: IInputEntry) => {
+    setEditingInput(entry);
+    setEditInDate(entry.date);
+    setEditInWork(entry.workName);
+    setEditInPieces(entry.pieces);
+    setEditInNote(entry.note || "");
+  };
+
+  const handleCancelEditInput = () => {
+    setEditingInput(null);
+    setEditInDate("");
+    setEditInWork("");
+    setEditInPieces(0);
+    setEditInNote("");
+  };
+
+  const handleSaveInput = () => {
+    if (!selected || !editingInput || !editInDate || !editInWork || !editInPieces) return;
+    startTransition(async () => {
+      await updateInput(selected._id!, editingInput._id!, {
+        date: editInDate,
+        workName: editInWork,
+        pieces: Number(editInPieces),
+        note: editInNote,
+      });
+      handleCancelEditInput();
+      await refresh();
+    });
+  };
+
   // ---------- Output ----------
   const handleAddOutput = () => {
     if (!selected || !outDate || !outPieces) return;
@@ -175,6 +228,33 @@ export default function ProductionPage() {
     if (!selected) return;
     startTransition(async () => {
       await deleteOutput(selected._id!, id);
+      await refresh();
+    });
+  };
+
+  const handleEditOutput = (entry: IOutputEntry) => {
+    setEditingOutput(entry);
+    setEditOutDate(entry.date);
+    setEditOutPieces(entry.pieces);
+    setEditOutNote(entry.note || "");
+  };
+
+  const handleCancelEditOutput = () => {
+    setEditingOutput(null);
+    setEditOutDate("");
+    setEditOutPieces(0);
+    setEditOutNote("");
+  };
+
+  const handleSaveOutput = () => {
+    if (!selected || !editingOutput || !editOutDate || !editOutPieces) return;
+    startTransition(async () => {
+      await updateOutput(selected._id!, editingOutput._id!, {
+        date: editOutDate,
+        pieces: Number(editOutPieces),
+        note: editOutNote,
+      });
+      handleCancelEditOutput();
       await refresh();
     });
   };
@@ -435,18 +515,45 @@ export default function ProductionPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {selected.inputs.map((i) => (
+                          {withRunningTotal(selected.inputs).map(({ item: i, total }) => (
+                            editingInput?._id === i._id ? (
+                              <TableRow key={i._id} className="bg-muted/30">
+                                <TableCell><Input type="date" value={editInDate} onChange={(e) => setEditInDate(e.target.value)} className="h-8" aria-label={t.date} /></TableCell>
+                                <TableCell><Input value={editInWork} onChange={(e) => setEditInWork(e.target.value)} className="h-8" aria-label={t.workName} /></TableCell>
+                                <TableCell><Input type="number" min={1} value={editInPieces || ""} onChange={(e) => setEditInPieces(Number(e.target.value))} className="h-8 text-right" aria-label={t.pieces} /></TableCell>
+                                <TableCell><Input value={editInNote} onChange={(e) => setEditInNote(e.target.value)} className="h-8" aria-label={t.note} /></TableCell>
+                                <TableCell>
+                                  <div className="flex gap-0.5">
+                                    <Button size="icon-xs" variant="ghost" onClick={handleSaveInput} disabled={pending} aria-label={t.updateInput} className="text-[var(--signal)]">
+                                      <CheckIcon />
+                                    </Button>
+                                    <Button size="icon-xs" variant="ghost" onClick={handleCancelEditInput} aria-label={t.cancel}>
+                                      <XIcon />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ) : (
                             <TableRow key={i._id}>
                               <TableCell className="tnum text-muted-foreground">{i.date}</TableCell>
                               <TableCell className="font-medium">{i.workName}</TableCell>
-                              <TableCell className="tnum text-right font-medium">{nf.format(i.pieces)}</TableCell>
+                              <TableCell className="tnum text-right font-medium">
+                                {nf.format(i.pieces)}
+                                <span className="font-normal text-muted-foreground">/{nf.format(total)}</span>
+                              </TableCell>
                               <TableCell className="max-w-48 truncate text-muted-foreground">{i.note}</TableCell>
                               <TableCell>
-                                <Button size="icon-xs" variant="ghost" onClick={() => handleDeleteInput(i._id!)} aria-label={t.deleteInput} className="text-muted-foreground hover:text-destructive">
-                                  <Trash2Icon />
-                                </Button>
+                                <div className="flex gap-0.5">
+                                  <Button size="icon-xs" variant="ghost" onClick={() => handleEditInput(i)} aria-label={t.editInput} className="text-muted-foreground hover:text-[var(--signal)]">
+                                    <PencilIcon />
+                                  </Button>
+                                  <Button size="icon-xs" variant="ghost" onClick={() => handleDeleteInput(i._id!)} aria-label={t.deleteInput} className="text-muted-foreground hover:text-destructive">
+                                    <Trash2Icon />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
+                            )
                           ))}
                           {selected.inputs.length === 0 && (
                             <TableRow>
@@ -491,17 +598,43 @@ export default function ProductionPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {selected.outputs.map((o) => (
+                          {withRunningTotal(selected.outputs).map(({ item: o, total }) => (
+                            editingOutput?._id === o._id ? (
+                              <TableRow key={o._id} className="bg-muted/30">
+                                <TableCell><Input type="date" value={editOutDate} onChange={(e) => setEditOutDate(e.target.value)} className="h-8" aria-label={t.date} /></TableCell>
+                                <TableCell><Input type="number" min={1} value={editOutPieces || ""} onChange={(e) => setEditOutPieces(Number(e.target.value))} className="h-8 text-right" aria-label={t.pieces} /></TableCell>
+                                <TableCell><Input value={editOutNote} onChange={(e) => setEditOutNote(e.target.value)} className="h-8" aria-label={t.note} /></TableCell>
+                                <TableCell>
+                                  <div className="flex gap-0.5">
+                                    <Button size="icon-xs" variant="ghost" onClick={handleSaveOutput} disabled={pending} aria-label={t.updateOutput} className="text-[var(--signal)]">
+                                      <CheckIcon />
+                                    </Button>
+                                    <Button size="icon-xs" variant="ghost" onClick={handleCancelEditOutput} aria-label={t.cancel}>
+                                      <XIcon />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ) : (
                             <TableRow key={o._id}>
                               <TableCell className="tnum text-muted-foreground">{o.date}</TableCell>
-                              <TableCell className="tnum text-right font-medium">{nf.format(o.pieces)}</TableCell>
+                              <TableCell className="tnum text-right font-medium">
+                                {nf.format(o.pieces)}
+                                <span className="font-normal text-muted-foreground">/{nf.format(total)}</span>
+                              </TableCell>
                               <TableCell className="max-w-64 truncate text-muted-foreground">{o.note}</TableCell>
                               <TableCell>
-                                <Button size="icon-xs" variant="ghost" onClick={() => handleDeleteOutput(o._id!)} aria-label={t.deleteOutput} className="text-muted-foreground hover:text-destructive">
-                                  <Trash2Icon />
-                                </Button>
+                                <div className="flex gap-0.5">
+                                  <Button size="icon-xs" variant="ghost" onClick={() => handleEditOutput(o)} aria-label={t.editOutput} className="text-muted-foreground hover:text-[var(--signal)]">
+                                    <PencilIcon />
+                                  </Button>
+                                  <Button size="icon-xs" variant="ghost" onClick={() => handleDeleteOutput(o._id!)} aria-label={t.deleteOutput} className="text-muted-foreground hover:text-destructive">
+                                    <Trash2Icon />
+                                  </Button>
+                                </div>
                               </TableCell>
                             </TableRow>
+                            )
                           ))}
                           {selected.outputs.length === 0 && (
                             <TableRow>
