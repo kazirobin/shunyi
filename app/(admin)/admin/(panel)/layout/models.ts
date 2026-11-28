@@ -2,13 +2,18 @@ import { Schema, models, model } from "mongoose";
 
 const InputEntrySchema = new Schema({
   date: { type: String, required: true },
-  workName: { type: String, required: true },
+  workName: { type: String, default: "" },
+  color: { type: String, default: "" },
+  size: { type: String, default: "" },
   pieces: { type: Number, required: true },
   note: { type: String, default: "" },
 });
 
 const OutputEntrySchema = new Schema({
   date: { type: String, required: true },
+  workName: { type: String, default: "" },
+  color: { type: String, default: "" },
+  size: { type: String, default: "" },
   pieces: { type: Number, required: true },
   note: { type: String, default: "" },
 });

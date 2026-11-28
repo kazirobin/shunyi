@@ -10,6 +10,8 @@ export interface IInputEntry {
   _id?: string;
   date: string;
   workName: string;
+  color?: string;
+  size?: string;
   pieces: number;
   note?: string;
 }
@@ -17,6 +19,9 @@ export interface IInputEntry {
 export interface IOutputEntry {
   _id?: string;
   date: string;
+  workName?: string;
+  color?: string;
+  size?: string;
   pieces: number;
   note?: string;
 }

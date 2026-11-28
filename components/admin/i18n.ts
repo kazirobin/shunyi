@@ -15,6 +15,145 @@ export function formatYmd(locale: AdminLocale, ymd: string, opts: Intl.DateTimeF
 
 export const LOCALE_NAME: Record<AdminLocale, string> = { en: "English", zh: "中文", bn: "বাংলা" };
 
+export function toChineseNumber(n: number): string {
+  if (!Number.isFinite(n)) return "";
+  const num = Math.round(n);
+  if (num === 0) return "零";
+  const digits = ["零", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
+  const units = ["", "十", "百", "千"];
+  if (num < 0) return "负" + toChineseNumber(-num);
+  if (num >= 10 && num < 20) {
+    return num === 10 ? "十" : "十" + digits[num % 10];
+  }
+  if (num >= 10000) {
+    const wan = Math.floor(num / 10000);
+    const rem = num % 10000;
+    let s = toChineseNumber(wan) + "万";
+    if (rem > 0) {
+      if (rem < 1000) s += "零";
+      s += toChineseNumber(rem);
+    }
+    return s;
+  }
+  const s = num.toString();
+  const len = s.length;
+  let res = "";
+  let zero = false;
+  for (let i = 0; i < len; i++) {
+    const d = parseInt(s[i], 10);
+    const u = units[len - i - 1];
+    if (d === 0) {
+      zero = true;
+    } else {
+      if (zero) {
+        res += "零";
+        zero = false;
+      }
+      res += digits[d] + u;
+    }
+  }
+  return res;
+}
+
+const COLOR_MAP: Record<string, { zh: string; bn: string }> = {
+  black: { zh: "黑色", bn: "কালো" },
+  white: { zh: "白色", bn: "সাদা" },
+  red: { zh: "红色", bn: "লাল" },
+  blue: { zh: "蓝色", bn: "নীল" },
+  green: { zh: "绿色", bn: "সবুজ" },
+  yellow: { zh: "黄色", bn: "হলুদ" },
+  navy: { zh: "藏青色", bn: "নেভি" },
+  "navy blue": { zh: "藏青色", bn: "নেভি ব্লু" },
+  grey: { zh: "灰色", bn: "ধূসর" },
+  gray: { zh: "灰色", bn: "ধূসর" },
+  orange: { zh: "橙色", bn: "কমলা" },
+  pink: { zh: "粉色", bn: "গোলাপী" },
+  purple: { zh: "紫色", bn: "বেগুনী" },
+  brown: { zh: "棕色", bn: "বাদামী" },
+  khaki: { zh: "卡其色", bn: "খাকি" },
+  beige: { zh: "米色", bn: "বেইজ" },
+  maroon: { zh: "枣红", bn: "মেরুন" },
+  olive: { zh: "橄榄绿", bn: "জলপাই" },
+  teal: { zh: "青色", bn: "টিল" },
+  charcoal: { zh: "炭黑", bn: "চারকোল" },
+};
+
+const SIZE_MAP: Record<string, { zh: string; bn: string }> = {
+  xs: { zh: "特小号 (XS)", bn: "XS" },
+  s: { zh: "小号 (S)", bn: "S" },
+  m: { zh: "中号 (M)", bn: "M" },
+  l: { zh: "大号 (L)", bn: "L" },
+  xl: { zh: "特大号 (XL)", bn: "XL" },
+  "2xl": { zh: "加大号 (2XL)", bn: "2XL" },
+  xxl: { zh: "加大号 (XXL)", bn: "XXL" },
+  "3xl": { zh: "特大3号 (3XL)", bn: "3XL" },
+  xxxl: { zh: "特大3号 (3XL)", bn: "3XL" },
+  "4xl": { zh: "特大4号 (4XL)", bn: "4XL" },
+  "5xl": { zh: "特大5号 (5XL)", bn: "5XL" },
+  free: { zh: "均码 (Free)", bn: "ফ্রি সাইজ" },
+};
+
+const WORK_MAP: Record<string, { zh: string; bn: string }> = {
+  cutting: { zh: "裁剪", bn: "কাটিং" },
+  sewing: { zh: "缝纫", bn: "সুইং" },
+  finishing: { zh: "后道", bn: "ফিনিশিং" },
+  ironing: { zh: "熨烫", bn: "আয়রনিং" },
+  packing: { zh: "包装", bn: "প্যাকিং" },
+  printing: { zh: "印花", bn: "প্রিন্টিং" },
+  embroidery: { zh: "刺绣", bn: "এমব্রয়ডারি" },
+  sample: { zh: "样衣", bn: "স্যাম্পল" },
+  qc: { zh: "质检", bn: "কিউসি" },
+  inspection: { zh: "验货", bn: "ইনস্পেকশন" },
+};
+
+export function translateGarmentTerm(
+  raw: string | undefined,
+  locale: AdminLocale,
+  type: "color" | "size" | "work"
+): string {
+  if (!raw) return "";
+  const key = raw.trim().toLowerCase();
+  const map = type === "color" ? COLOR_MAP : type === "size" ? SIZE_MAP : WORK_MAP;
+  const match = map[key];
+  if (locale === "zh") {
+    if (match) return `${match.zh} (${raw})`;
+    return raw;
+  }
+  if (locale === "bn") {
+    if (match) return `${match.bn} (${raw})`;
+    return raw;
+  }
+  return raw;
+}
+
+export function getColorHex(color: string | undefined): string | null {
+  if (!color) return null;
+  const c = color.trim().toLowerCase();
+  const hexMap: Record<string, string> = {
+    black: "#18181b",
+    white: "#f4f4f5",
+    red: "#ef4444",
+    blue: "#3b82f6",
+    green: "#22c55e",
+    yellow: "#eab308",
+    navy: "#1e3a8a",
+    "navy blue": "#1e3a8a",
+    grey: "#71717a",
+    gray: "#71717a",
+    orange: "#f97316",
+    pink: "#ec4899",
+    purple: "#a855f7",
+    brown: "#78350f",
+    khaki: "#c2a649",
+    beige: "#f5f5dc",
+    maroon: "#800000",
+    olive: "#808000",
+    teal: "#14b8a6",
+    charcoal: "#333333",
+  };
+  return hexMap[c] ?? null;
+}
+
 const en = {
   nav: {
     brand: "Shunyi Garments",
@@ -181,6 +320,23 @@ const en = {
     date: "Date",
     workName: "Work name",
     work: "Work",
+    color: "Color",
+    size: "Size",
+    colorPlaceholder: "Color (e.g. Black)",
+    sizePlaceholder: "Size (e.g. M, L)",
+    byColor: "By Color",
+    bySize: "By Size",
+    allColors: "All Colors",
+    allSizes: "All Sizes",
+    colorSummary: "Color Breakdown",
+    sizeSummary: "Size Breakdown",
+    remaining: "Remaining",
+    balance: "Balance",
+    floorSummary: "Floor Summary",
+    scrollToTop: "Top",
+    scrollToBottom: "Bottom",
+    quickNav: "Quick Jump",
+    unitPieces: "pcs",
     pieces: "Pieces",
     noteOptional: "Note (optional)",
     note: "Note",
@@ -453,6 +609,23 @@ const zh: AdminDict = {
     date: "日期",
     workName: "工作名称",
     work: "工作",
+    color: "颜色",
+    size: "尺码",
+    colorPlaceholder: "颜色 (例如 黑色)",
+    sizePlaceholder: "尺码 (例如 M, L)",
+    byColor: "按颜色统计",
+    bySize: "按尺码统计",
+    allColors: "全部颜色",
+    allSizes: "全部尺码",
+    colorSummary: "颜色明细",
+    sizeSummary: "尺码明细",
+    remaining: "剩余在制",
+    balance: "结余",
+    floorSummary: "车间汇总",
+    scrollToTop: "回顶部",
+    scrollToBottom: "到底部",
+    quickNav: "快捷跳转",
+    unitPieces: "件",
     pieces: "件数",
     noteOptional: "备注（可选）",
     note: "备注",
@@ -723,6 +896,23 @@ const bn: AdminDict = {
     date: "তারিখ",
     workName: "কাজের নাম",
     work: "কাজ",
+    color: "রং",
+    size: "সাইজ",
+    colorPlaceholder: "রং (যেমন কালো)",
+    sizePlaceholder: "সাইজ (যেমন M, L)",
+    byColor: "রং অনুযায়ী হিসাব",
+    bySize: "সাইজ অনুযায়ী হিসাব",
+    allColors: "সব রং",
+    allSizes: "সব সাইজ",
+    colorSummary: "রং ভিত্তিক হিসাব",
+    sizeSummary: "সাইজ ভিত্তিক হিসাব",
+    remaining: "বাকি কাজ",
+    balance: "ব্যালেন্স",
+    floorSummary: "ফ্লোর সারাংশ",
+    scrollToTop: "উপরে",
+    scrollToBottom: "নিচে",
+    quickNav: "দ্রুত লিংক",
+    unitPieces: "টি",
     pieces: "পিস",
     noteOptional: "নোট (ঐচ্ছিক)",
     note: "নোট",
